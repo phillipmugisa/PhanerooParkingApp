@@ -1,0 +1,4 @@
+root = "./cmd"
+build = "go build -o ./bin/app ./cmd"
+[[watcher]]
+paths = ["/cmd/main.go", "**/*.go"]
