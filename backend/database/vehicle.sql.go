@@ -11,6 +11,166 @@ import (
 	"time"
 )
 
+const createDriver = `-- name: CreateDriver :one
+INSERT INTO driver (fullname, phone_number, email, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5) RETURNING id
+`
+
+type CreateDriverParams struct {
+	Fullname    string
+	PhoneNumber string
+	Email       sql.NullString
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+func (q *Queries) CreateDriver(ctx context.Context, arg CreateDriverParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, createDriver,
+		arg.Fullname,
+		arg.PhoneNumber,
+		arg.Email,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const createVehicle = `-- name: CreateVehicle :execresult
+INSERT INTO vehicle(driver_id, license_number, model, security_notes, session_id, is_checked_out, check_in_time, check_out_time, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+`
+
+type CreateVehicleParams struct {
+	DriverID      int32
+	LicenseNumber string
+	Model         sql.NullString
+	SecurityNotes sql.NullString
+	SessionID     int32
+	IsCheckedOut  sql.NullBool
+	CheckInTime   sql.NullTime
+	CheckOutTime  sql.NullTime
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
+func (q *Queries) CreateVehicle(ctx context.Context, arg CreateVehicleParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createVehicle,
+		arg.DriverID,
+		arg.LicenseNumber,
+		arg.Model,
+		arg.SecurityNotes,
+		arg.SessionID,
+		arg.IsCheckedOut,
+		arg.CheckInTime,
+		arg.CheckOutTime,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+}
+
+const getVehicleById = `-- name: GetVehicleById :one
+SELECT id, driver_id, license_number, model, security_notes, session_id, is_checked_out, check_in_time, check_out_time, created_at, updated_at FROM vehicle WHERE id = $1
+`
+
+func (q *Queries) GetVehicleById(ctx context.Context, id int32) (Vehicle, error) {
+	row := q.db.QueryRowContext(ctx, getVehicleById, id)
+	var i Vehicle
+	err := row.Scan(
+		&i.ID,
+		&i.DriverID,
+		&i.LicenseNumber,
+		&i.Model,
+		&i.SecurityNotes,
+		&i.SessionID,
+		&i.IsCheckedOut,
+		&i.CheckInTime,
+		&i.CheckOutTime,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getVehiclesByDriver = `-- name: GetVehiclesByDriver :many
+SELECT id, driver_id, license_number, model, security_notes, session_id, is_checked_out, check_in_time, check_out_time, created_at, updated_at FROM vehicle WHERE driver_id = $1
+`
+
+func (q *Queries) GetVehiclesByDriver(ctx context.Context, driverID int32) ([]Vehicle, error) {
+	rows, err := q.db.QueryContext(ctx, getVehiclesByDriver, driverID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Vehicle
+	for rows.Next() {
+		var i Vehicle
+		if err := rows.Scan(
+			&i.ID,
+			&i.DriverID,
+			&i.LicenseNumber,
+			&i.Model,
+			&i.SecurityNotes,
+			&i.SessionID,
+			&i.IsCheckedOut,
+			&i.CheckInTime,
+			&i.CheckOutTime,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getVehiclesByLicense = `-- name: GetVehiclesByLicense :many
+SELECT id, driver_id, license_number, model, security_notes, session_id, is_checked_out, check_in_time, check_out_time, created_at, updated_at FROM vehicle WHERE license_number = $1
+`
+
+func (q *Queries) GetVehiclesByLicense(ctx context.Context, licenseNumber string) ([]Vehicle, error) {
+	rows, err := q.db.QueryContext(ctx, getVehiclesByLicense, licenseNumber)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Vehicle
+	for rows.Next() {
+		var i Vehicle
+		if err := rows.Scan(
+			&i.ID,
+			&i.DriverID,
+			&i.LicenseNumber,
+			&i.Model,
+			&i.SecurityNotes,
+			&i.SessionID,
+			&i.IsCheckedOut,
+			&i.CheckInTime,
+			&i.CheckOutTime,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDriver = `-- name: ListDriver :many
 SELECT id, fullname, phone_number, email, created_at, updated_at FROM driver ORDER BY ID DESC
 `
@@ -82,89 +242,4 @@ func (q *Queries) ListVehicle(ctx context.Context) ([]Vehicle, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const createDriver = `-- name: createDriver :execresult
-INSERT INTO driver(fullname, phone_number, email, created_at, updated_at)
-VALUES(?, ?, ?, ?, ?)
-`
-
-type createDriverParams struct {
-	Fullname    sql.NullString
-	PhoneNumber sql.NullString
-	Email       sql.NullString
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-}
-
-func (q *Queries) createDriver(ctx context.Context, arg createDriverParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createDriver,
-		arg.Fullname,
-		arg.PhoneNumber,
-		arg.Email,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-	)
-}
-
-const createVehicle = `-- name: createVehicle :execresult
-INSERT INTO vehicle(driver_id, license_number, model, security_notes, session_id, is_checked_out, check_in_time, check_out_time, created_at, updated_at)
-VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`
-
-type createVehicleParams struct {
-	DriverID      sql.NullInt32
-	LicenseNumber sql.NullString
-	Model         sql.NullString
-	SecurityNotes sql.NullString
-	SessionID     sql.NullInt32
-	IsCheckedOut  sql.NullBool
-	CheckInTime   sql.NullTime
-	CheckOutTime  sql.NullTime
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-}
-
-func (q *Queries) createVehicle(ctx context.Context, arg createVehicleParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createVehicle,
-		arg.DriverID,
-		arg.LicenseNumber,
-		arg.Model,
-		arg.SecurityNotes,
-		arg.SessionID,
-		arg.IsCheckedOut,
-		arg.CheckInTime,
-		arg.CheckOutTime,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-	)
-}
-
-const getVehicle = `-- name: getVehicle :one
-SELECT id, driver_id, license_number, model, security_notes, session_id, is_checked_out, check_in_time, check_out_time, created_at, updated_at FROM vehicle WHERE id = ? OR driver_id = ? OR license_number = ?
-`
-
-type getVehicleParams struct {
-	ID            uint64
-	DriverID      sql.NullInt32
-	LicenseNumber sql.NullString
-}
-
-func (q *Queries) getVehicle(ctx context.Context, arg getVehicleParams) (Vehicle, error) {
-	row := q.db.QueryRowContext(ctx, getVehicle, arg.ID, arg.DriverID, arg.LicenseNumber)
-	var i Vehicle
-	err := row.Scan(
-		&i.ID,
-		&i.DriverID,
-		&i.LicenseNumber,
-		&i.Model,
-		&i.SecurityNotes,
-		&i.SessionID,
-		&i.IsCheckedOut,
-		&i.CheckInTime,
-		&i.CheckOutTime,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

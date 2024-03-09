@@ -23,7 +23,6 @@ func InitDB() (*sql.DB, error) {
 	if err != nil {
 		log.Fatalln("Couldnot connect to database")
 	}
-	defer db.Close()
 
 	if err := db.Ping(); err != nil {
 		return nil, err

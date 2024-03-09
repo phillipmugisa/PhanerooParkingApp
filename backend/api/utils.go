@@ -35,7 +35,7 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) *ApiE
 
 func HandleApiError(w http.ResponseWriter, err *ApiError) {
 	if err.Status > 499 {
-		log.Println("Responding with error: ", err.Message)
+		log.Println("Responding with error:", err.Message)
 	}
 
 	type errResponse struct {

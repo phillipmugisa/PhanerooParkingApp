@@ -11,6 +11,198 @@ import (
 	"time"
 )
 
+const createAllocation = `-- name: CreateAllocation :execresult
+INSERT INTO allocation(team_member_id, parking_id, service_id, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5)
+`
+
+type CreateAllocationParams struct {
+	TeamMemberID int32
+	ParkingID    int32
+	ServiceID    int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+func (q *Queries) CreateAllocation(ctx context.Context, arg CreateAllocationParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createAllocation,
+		arg.TeamMemberID,
+		arg.ParkingID,
+		arg.ServiceID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+}
+
+const createDepartment = `-- name: CreateDepartment :execresult
+INSERT INTO department(name, codename, created_at, updated_at)
+VALUES($1, $2, $3, $4)
+`
+
+type CreateDepartmentParams struct {
+	Name      string
+	Codename  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) CreateDepartment(ctx context.Context, arg CreateDepartmentParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createDepartment,
+		arg.Name,
+		arg.Codename,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+}
+
+const createParkingSession = `-- name: CreateParkingSession :execresult
+INSERT INTO parkingsession(station_id, service_id, report, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5)
+`
+
+type CreateParkingSessionParams struct {
+	StationID int32
+	ServiceID int32
+	Report    sql.NullString
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) CreateParkingSession(ctx context.Context, arg CreateParkingSessionParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createParkingSession,
+		arg.StationID,
+		arg.ServiceID,
+		arg.Report,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+}
+
+const createParkingStation = `-- name: CreateParkingStation :execresult
+INSERT INTO parkingstation(name, codename, created_at, updated_at)
+VALUES($1, $2, $3, $4)
+`
+
+type CreateParkingStationParams struct {
+	Name      string
+	Codename  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) CreateParkingStation(ctx context.Context, arg CreateParkingStationParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createParkingStation,
+		arg.Name,
+		arg.Codename,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+}
+
+const createService = `-- name: CreateService :execresult
+INSERT INTO service(name, date, created_at, updated_at)
+VALUES($1, $2, $3, $4)
+`
+
+type CreateServiceParams struct {
+	Name      string
+	Date      time.Time
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) CreateService(ctx context.Context, arg CreateServiceParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createService,
+		arg.Name,
+		arg.Date,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+}
+
+const createTeamMember = `-- name: CreateTeamMember :execresult
+INSERT INTO team_member(fullname, codename, phone_number, email, is_team_leader, is_admin, department_id, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+`
+
+type CreateTeamMemberParams struct {
+	Fullname     string
+	Codename     string
+	PhoneNumber  string
+	Email        sql.NullString
+	IsTeamLeader sql.NullBool
+	IsAdmin      sql.NullBool
+	DepartmentID int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+func (q *Queries) CreateTeamMember(ctx context.Context, arg CreateTeamMemberParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createTeamMember,
+		arg.Fullname,
+		arg.Codename,
+		arg.PhoneNumber,
+		arg.Email,
+		arg.IsTeamLeader,
+		arg.IsAdmin,
+		arg.DepartmentID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+}
+
+const getParkingSession = `-- name: GetParkingSession :one
+SELECT id, station_id, service_id, report, created_at, updated_at FROM parkingsession WHERE id = $1
+`
+
+func (q *Queries) GetParkingSession(ctx context.Context, id int32) (Parkingsession, error) {
+	row := q.db.QueryRowContext(ctx, getParkingSession, id)
+	var i Parkingsession
+	err := row.Scan(
+		&i.ID,
+		&i.StationID,
+		&i.ServiceID,
+		&i.Report,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getParkingStation = `-- name: GetParkingStation :one
+SELECT id, name, codename, created_at, updated_at FROM parkingstation WHERE id = $1
+`
+
+func (q *Queries) GetParkingStation(ctx context.Context, id int32) (Parkingstation, error) {
+	row := q.db.QueryRowContext(ctx, getParkingStation, id)
+	var i Parkingstation
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Codename,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getService = `-- name: GetService :one
+SELECT id, name, date, created_at, updated_at FROM service WHERE id = $1
+`
+
+func (q *Queries) GetService(ctx context.Context, id int32) (Service, error) {
+	row := q.db.QueryRowContext(ctx, getService, id)
+	var i Service
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Date,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listAllocation = `-- name: ListAllocation :many
 SELECT id, team_member_id, parking_id, service_id, created_at, updated_at FROM allocation ORDER BY ID DESC
 `
@@ -214,144 +406,4 @@ func (q *Queries) ListTeamMember(ctx context.Context) ([]TeamMember, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const createAllocation = `-- name: createAllocation :execresult
-INSERT INTO allocation(team_member_id, parking_id, service_id, created_at, updated_at)
-VALUES(?, ?, ?, ?, ?)
-`
-
-type createAllocationParams struct {
-	TeamMemberID sql.NullInt32
-	ParkingID    sql.NullInt32
-	ServiceID    sql.NullInt32
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-}
-
-func (q *Queries) createAllocation(ctx context.Context, arg createAllocationParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createAllocation,
-		arg.TeamMemberID,
-		arg.ParkingID,
-		arg.ServiceID,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-	)
-}
-
-const createDepartment = `-- name: createDepartment :execresult
-INSERT INTO department(name, codename, created_at, updated_at)
-VALUES(?, ?, ?, ?)
-`
-
-type createDepartmentParams struct {
-	Name      sql.NullString
-	Codename  sql.NullString
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-func (q *Queries) createDepartment(ctx context.Context, arg createDepartmentParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createDepartment,
-		arg.Name,
-		arg.Codename,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-	)
-}
-
-const createParkingSession = `-- name: createParkingSession :execresult
-INSERT INTO parkingsession(station_id, service_id, report, created_at, updated_at)
-VALUES(?, ?, ?, ?, ?)
-`
-
-type createParkingSessionParams struct {
-	StationID sql.NullInt32
-	ServiceID sql.NullInt32
-	Report    sql.NullString
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-func (q *Queries) createParkingSession(ctx context.Context, arg createParkingSessionParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createParkingSession,
-		arg.StationID,
-		arg.ServiceID,
-		arg.Report,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-	)
-}
-
-const createParkingStation = `-- name: createParkingStation :execresult
-INSERT INTO parkingstation(name, codename, created_at, updated_at)
-VALUES(?, ?, ?, ?)
-`
-
-type createParkingStationParams struct {
-	Name      sql.NullString
-	Codename  sql.NullString
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-func (q *Queries) createParkingStation(ctx context.Context, arg createParkingStationParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createParkingStation,
-		arg.Name,
-		arg.Codename,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-	)
-}
-
-const createService = `-- name: createService :execresult
-INSERT INTO service(name, date, created_at, updated_at)
-VALUES(?, ?, ?, ?)
-`
-
-type createServiceParams struct {
-	Name      sql.NullString
-	Date      time.Time
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-func (q *Queries) createService(ctx context.Context, arg createServiceParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createService,
-		arg.Name,
-		arg.Date,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-	)
-}
-
-const createTeamMember = `-- name: createTeamMember :execresult
-INSERT INTO team_member(fullname, codename, phone_number, email, is_team_leader, is_admin, department_id, created_at, updated_at)
-VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
-`
-
-type createTeamMemberParams struct {
-	Fullname     sql.NullString
-	Codename     sql.NullString
-	PhoneNumber  sql.NullString
-	Email        sql.NullString
-	IsTeamLeader sql.NullBool
-	IsAdmin      sql.NullBool
-	DepartmentID sql.NullInt32
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-}
-
-func (q *Queries) createTeamMember(ctx context.Context, arg createTeamMemberParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createTeamMember,
-		arg.Fullname,
-		arg.Codename,
-		arg.PhoneNumber,
-		arg.Email,
-		arg.IsTeamLeader,
-		arg.IsAdmin,
-		arg.DepartmentID,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-	)
 }

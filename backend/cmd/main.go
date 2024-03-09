@@ -17,6 +17,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
+
 	a := api.NewAppServer(port, db)
 
 	a.StartServer()

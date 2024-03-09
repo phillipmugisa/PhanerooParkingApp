@@ -25,7 +25,7 @@ func (a *AppServer) Run() *http.Server {
 	// 	MaxAge:           300, // Maximum value not ignored by any of major browsers
 	// }))
 
-	registerRoutes(r)
+	a.registerRoutes(r)
 
 	return &http.Server{
 		Addr:           fmt.Sprintf(":%s", a.port),
@@ -36,6 +36,22 @@ func (a *AppServer) Run() *http.Server {
 	}
 }
 
-func registerRoutes(r *chi.Mux) {
-	r.Get("/vehicles", MakeApiHandler(ListVehiclesHandler))
+func (a *AppServer) registerRoutes(r *chi.Mux) {
+	r.Get("/vehicles", MakeApiHandler(a.ListVehiclesHandler))
+	r.Post("/vehicles/register", MakeApiHandler(a.RegisterVehicleHandler))
+
+	r.Get("/parkingsessions", MakeApiHandler(a.ListParkingSessionHandler))
+	r.Post("/parkingsessions/register", MakeApiHandler(a.CreateParkingSessionHandler))
+	r.Get("/parkingsessions/details/{id}", MakeApiHandler(a.GetParkingSessionHandler))
+	r.Get("/parkingsessions/details", MakeApiHandler(a.GetVehicleParkingSessionHandler))
+
+	r.Get("/parkingstations", MakeApiHandler(a.ListParkingStationHandler))
+	r.Post("/parkingstations/register", MakeApiHandler(a.CreateParkingStationHandler))
+	r.Get("/parkingstations/details/{id}", MakeApiHandler(a.GetParkingStationHandler))
+	r.Get("/parkingstations/details/{id}/vehicles", MakeApiHandler(a.GetParkingStationVehiclesHandler))
+
+	r.Get("/services", MakeApiHandler(a.ListServicerHandler))
+	r.Post("/services/register", MakeApiHandler(a.CreateServicerHandler))
+	r.Get("/services/details/{id}", MakeApiHandler(a.GetServicerHandler))
+	r.Get("/service/details/{id}/vehicles", MakeApiHandler(a.GetServiceVehicleHandler))
 }

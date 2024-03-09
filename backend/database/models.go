@@ -10,76 +10,76 @@ import (
 )
 
 type Allocation struct {
-	ID           uint64
-	TeamMemberID sql.NullInt32
-	ParkingID    sql.NullInt32
-	ServiceID    sql.NullInt32
+	ID           int32
+	TeamMemberID int32
+	ParkingID    int32
+	ServiceID    int32
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
 
 type Department struct {
-	ID        uint64
-	Name      sql.NullString
-	Codename  sql.NullString
+	ID        int32
+	Name      string
+	Codename  string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 type Driver struct {
-	ID          uint64
-	Fullname    sql.NullString
-	PhoneNumber sql.NullString
+	ID          int32
+	Fullname    string
+	PhoneNumber string
 	Email       sql.NullString
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
 
 type Parkingsession struct {
-	ID        uint64
-	StationID sql.NullInt32
-	ServiceID sql.NullInt32
+	ID        int32
+	StationID int32
+	ServiceID int32
 	Report    sql.NullString
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 type Parkingstation struct {
-	ID        uint64
-	Name      sql.NullString
-	Codename  sql.NullString
+	ID        int32
+	Name      string
+	Codename  string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 type Service struct {
-	ID        uint64
-	Name      sql.NullString
+	ID        int32
+	Name      string
 	Date      time.Time
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 type TeamMember struct {
-	ID           uint64
-	Fullname     sql.NullString
-	Codename     sql.NullString
-	PhoneNumber  sql.NullString
+	ID           int32
+	Fullname     string
+	Codename     string
+	PhoneNumber  string
 	Email        sql.NullString
 	IsTeamLeader sql.NullBool
 	IsAdmin      sql.NullBool
-	DepartmentID sql.NullInt32
+	DepartmentID int32
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
 
 type Vehicle struct {
-	ID            uint64
-	DriverID      sql.NullInt32
-	LicenseNumber sql.NullString
+	ID            int32
+	DriverID      int32
+	LicenseNumber string
 	Model         sql.NullString
 	SecurityNotes sql.NullString
-	SessionID     sql.NullInt32
+	SessionID     int32
 	IsCheckedOut  sql.NullBool
 	CheckInTime   sql.NullTime
 	CheckOutTime  sql.NullTime
