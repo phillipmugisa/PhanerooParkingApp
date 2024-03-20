@@ -71,7 +71,8 @@ CREATE TABLE vehicle (
     model VARCHAR(50),
     security_notes TEXT NULL,
 
-    session_id INTEGER REFERENCES parkingsession(id) ON DELETE CASCADE NOT NULL,
+    parking_id INTEGER REFERENCES parkingstation(id) ON DELETE CASCADE NOT NULL,
+    service_id INTEGER REFERENCES service(id) ON DELETE CASCADE NOT NULL,
 
     is_checked_out BOOLEAN DEFAULT FALSE,
     check_in_time TIMESTAMP NULL,

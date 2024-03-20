@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -79,7 +80,42 @@ type VehicleData struct {
 	DriverTelNo  string    `json:"driverTelNo"`
 	DriverEmail  string    `json:"driverEmail"`
 	SecurityNote string    `json:"securityNote"`
-	SessionId    int       `json:"sessionId"`
+	ServiceId    int       `json:"serviceId"`
+	ParkingId    int       `json:"parkingId"`
+}
+
+// Implement custom UnmarshalJSON method for time.Time
+func (t *VehicleData) UnmarshalJSON(b []byte) error {
+	type Alias VehicleData // Create an alias to avoid infinite recursion
+	aux := &struct {
+		CheckInTime  string `json:"checkInTime"`
+		CheckOutTime string `json:"checkOutTime"`
+		*Alias
+	}{
+		Alias: (*Alias)(t),
+	}
+
+	// Unmarshal into the temporary struct to avoid recursion
+	if err := json.Unmarshal(b, &aux); err != nil {
+		return err
+	}
+
+	// Parse time strings into time.Time fields
+	var err error
+	if aux.CheckInTime != "" {
+		t.CheckInTime, err = time.Parse("2006-01-02T15:04:05.999", aux.CheckInTime)
+		if err != nil {
+			return err
+		}
+	}
+	if aux.CheckOutTime != "" {
+		t.CheckOutTime, err = time.Parse("2006-01-02T15:04:05.999", aux.CheckOutTime)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type ParkingSessionData struct {

@@ -79,7 +79,8 @@ type Vehicle struct {
 	LicenseNumber string
 	Model         sql.NullString
 	SecurityNotes sql.NullString
-	SessionID     int32
+	ParkingID     int32
+	ServiceID     int32
 	IsCheckedOut  sql.NullBool
 	CheckInTime   sql.NullTime
 	CheckOutTime  sql.NullTime
