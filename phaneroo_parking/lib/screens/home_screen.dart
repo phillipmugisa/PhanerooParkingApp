@@ -29,12 +29,12 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(height: 80.0),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {},
-          child: const Icon(
-            Icons.record_voice_over,
-          ),
-        ),
+        // floatingActionButton: FloatingActionButton(
+        //   onPressed: () {},
+        //   child: const Icon(
+        //     Icons.record_voice_over,
+        //   ),
+        // ),
         bottomNavigationBar: NavigationBar(
           backgroundColor: Colors.white,
           indicatorColor: Colors.grey.shade300,
@@ -261,8 +261,8 @@ class PersonnalDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(5.9),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Wrap(
+        direction: Axis.horizontal,
         children: [
           Container(
             padding: const EdgeInsets.symmetric(

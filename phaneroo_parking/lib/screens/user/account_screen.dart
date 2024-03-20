@@ -42,7 +42,7 @@ class _AccountScreenState extends State<AccountScreen> {
                             padding: const EdgeInsets.all(2.5),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(100),
-                              child: Image.asset("images/user.png"),
+                              child: Image.asset("assets/images/user.png"),
                             ),
                           ),
                         ),

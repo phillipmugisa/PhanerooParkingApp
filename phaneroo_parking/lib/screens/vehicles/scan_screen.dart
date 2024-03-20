@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
+import 'package:phaneroo_parking/requests.dart';
 
 class ScanCarScreen extends StatefulWidget {
   const ScanCarScreen({super.key});
@@ -9,14 +11,32 @@ class ScanCarScreen extends StatefulWidget {
 }
 
 class _ScanCarScreenState extends State<ScanCarScreen> {
+  int currentScreenIndex = 2;
+  int licenseNoLength = 8;
+  int? currentServiceId;
+  int? parkingId;
+  final RegExp pattern = RegExp(r'^[A-Z]{3}\s\d{3}[A-Z]$');
+
+  String licenseNo = "";
+
+  String? parkingValue;
+  late Future parkingList;
+
+  @override
+  void initState() {
+    super.initState();
+    parkingList = listParkings();
+  }
+
   @override
   Widget build(BuildContext context) {
-    int currentScreenIndex = 2;
-    int licenseNoLength = 8;
-    final RegExp pattern = RegExp(r'^[A-Z]{3}\s\d{3}[A-Z]$');
-
-    String licenseNo = "";
     TextEditingController textController = TextEditingController();
+
+    // fetch parking session id
+    getCurrentService().then((response) {
+      var jsonData = json.decode(response.body);
+      currentServiceId = jsonData["results"][0]["ID"];
+    }).catchError((err) {});
 
     return SafeArea(
       child: Scaffold(
@@ -24,6 +44,74 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 0),
           children: [
+            Row(
+              children: [
+                Text(
+                  "Select Parking: ",
+                  style: GoogleFonts.lato(
+                    textStyle: const TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10.0),
+                FutureBuilder(
+                  future: parkingList,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else if (snapshot.hasData) {
+                      var jsonData = json.decode(snapshot.data!.body);
+                      var parkings = jsonData["results"] as List;
+
+                      // serviceValue = parkings[0]["Name"].toString();
+                      List<DropdownMenuItem> widgetList = parkings
+                          .map(
+                            (s) => DropdownMenuItem(
+                              value: s["Codename"],
+                              child: Text(s["Codename"]),
+                            ),
+                          )
+                          .toList();
+
+                      return Expanded(
+                        child: DropdownButton(
+                          value: parkingValue,
+                          onChanged: (value) {
+                            // get parking
+                            var parking = parkings
+                                .where((p) => p["Codename"] == value)
+                                .toList();
+
+                            parkingId = parking[0]["ID"];
+                            setState(() {
+                              parkingValue = parking[0]["Codename"];
+                            });
+                          },
+                          style: GoogleFonts.lato(
+                            textStyle: const TextStyle(
+                              fontSize: 14.0,
+                            ),
+                          ),
+                          elevation: 16,
+                          iconEnabledColor: Colors.black,
+                          dropdownColor: Colors.white,
+                          underline: Container(),
+                          isExpanded: true,
+                          items: widgetList,
+                        ),
+                      );
+                    } else {
+                      return const Text('Try Again');
+                    }
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 10.0),
             Container(
               constraints: const BoxConstraints(minHeight: 300.0),
               decoration: BoxDecoration(
@@ -35,12 +123,16 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                 color: Colors.grey.shade800,
               ),
               child: Center(
-                child: Text(
-                  "Start camera by clicking on camera button below.",
-                  style: GoogleFonts.lato(
-                    textStyle: TextStyle(
-                      color: Colors.grey.shade50,
-                      fontSize: 18.0,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: Text(
+                    "Start camera by clicking on camera button below.",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.lato(
+                      textStyle: TextStyle(
+                        color: Colors.grey.shade50,
+                        fontSize: 18.0,
+                      ),
                     ),
                   ),
                 ),
@@ -95,9 +187,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                   ),
                   IconButton(
                     onPressed: () {
-                      setState(() {
-                        licenseNo = textController.text;
-                      });
+                      licenseNo = textController.text;
 
                       if (licenseNo.length < licenseNoLength - 1 ||
                           !pattern.hasMatch(licenseNo)) {
@@ -116,8 +206,14 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                           ),
                         );
                       } else {
+                        Map<String, dynamic> data = {
+                          'licenseNo': licenseNo,
+                          "id": null,
+                          "currentServiceId": currentServiceId,
+                          "parkingId": parkingId,
+                        };
                         Navigator.pushNamed(context, "/driver_details",
-                            arguments: licenseNo);
+                            arguments: data);
                       }
 
                       return;
@@ -152,12 +248,12 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
             )
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {},
-          child: const Icon(
-            Icons.record_voice_over,
-          ),
-        ),
+        // floatingActionButton: FloatingActionButton(
+        //   onPressed: () {},
+        //   child: const Icon(
+        //     Icons.record_voice_over,
+        //   ),
+        // ),
         bottomNavigationBar: NavigationBar(
           backgroundColor: Colors.white,
           indicatorColor: Colors.grey.shade300,

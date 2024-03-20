@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:phaneroo_parking/requests.dart';
+import 'dart:convert';
 
 class RecordsScreen extends StatefulWidget {
   const RecordsScreen({super.key});
@@ -11,276 +11,224 @@ class RecordsScreen extends StatefulWidget {
 }
 
 class _RecordsScreenState extends State<RecordsScreen> {
-  String serviceValue = "phaneroo_500";
-  String stationValue = "truck";
-  int vehicleCount = 500;
+  String? serviceValue;
+  String? parkingValue;
+  int currentScreenIndex = 1;
+  dynamic parkings;
+
+  late Future servicesData;
+  late Future vehiclesData;
+  late Future parkingList;
+
+  TextEditingController searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    servicesData = getCurrentService();
+    vehiclesData = getVehiclesList();
+    parkingList = listParkings();
+  }
 
   @override
   Widget build(BuildContext context) {
-    int currentScreenIndex = 1;
-    TextEditingController searchController = TextEditingController();
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.white,
         body: ListView(
-          padding: const EdgeInsets.fromLTRB(20.0, 10.0, 10.0, 0),
+          padding: const EdgeInsets.fromLTRB(10.0, 20.0, 10.0, 0),
           children: [
-            TextFormField(
-              controller: searchController,
-              maxLines: 1,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.0),
-                ),
-                label: Text(
-                  "Search for Vehicle or Driver Details",
-                  style: GoogleFonts.lato(
-                    textStyle: const TextStyle(
-                      fontSize: 14.0,
+            Card(
+              surfaceTintColor: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: TextFormField(
+                  controller: searchController,
+                  maxLines: 1,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    label: Text(
+                      "Search for Vehicle or Driver Details",
+                      style: GoogleFonts.lato(
+                        textStyle: const TextStyle(
+                          fontSize: 14.0,
+                        ),
+                      ),
                     ),
                   ),
+                  onChanged: (String? keyword) {
+                    if (keyword!.length > 2) {
+                      setState(() {
+                        vehiclesData = searchVehicles(keyword);
+                      });
+                    } else {
+                      setState(() {
+                        vehiclesData = getVehiclesList();
+                      });
+                    }
+                  },
                 ),
               ),
             ),
-            const SizedBox(height: 15.0),
-            SizedBox(
-              height: 100.0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            const SizedBox(height: 20.0),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: Wrap(
+                direction: Axis.horizontal,
                 children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10.0, vertical: 5.0),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Select Service: ",
-                            style: GoogleFonts.lato(
-                              textStyle: const TextStyle(
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
+                  Row(
+                    children: [
+                      Text(
+                        "Select Service: ",
+                        style: GoogleFonts.lato(
+                          textStyle: const TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.w700,
                           ),
-                          const SizedBox(height: 5.0),
-                          DropdownButton(
-                            value: serviceValue,
-                            onChanged: (String? value) {
-                              // This is called when the user selects an item.
-                              setState(() {
-                                serviceValue = value!;
-                              });
-                            },
-                            style: GoogleFonts.lato(
-                              textStyle: const TextStyle(
-                                fontSize: 14.0,
-                              ),
-                            ),
-                            elevation: 16,
-                            iconEnabledColor: Colors.black,
-                            dropdownColor: Colors.white,
-                            underline: Container(),
-                            isExpanded: true,
-                            items: const [
-                              DropdownMenuItem(
-                                value: "phaneroo_500",
-                                child: Text("Phaneroo 500"),
-                              ),
-                              DropdownMenuItem(
-                                value: "phaneroo_501",
-                                child: Text("Phaneroo 501"),
-                              ),
-                              DropdownMenuItem(
-                                value: "phaneroo_502",
-                                child: Text("Phaneroo 502"),
-                              ),
-                              DropdownMenuItem(
-                                value: "phaneroo_503",
-                                child: Text("Phaneroo 503"),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 15.0),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10.0, vertical: 5.0),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Select Station: ",
-                            style: GoogleFonts.lato(
-                              textStyle: const TextStyle(
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 5.0),
-                          DropdownButton(
-                            value: stationValue,
-                            onChanged: (String? value) {
-                              // This is called when the user selects an item.
-                              setState(() {
-                                stationValue = value!;
-                              });
-                            },
-                            style: GoogleFonts.lato(
-                              textStyle: const TextStyle(
-                                fontSize: 14.0,
-                              ),
-                            ),
-                            elevation: 16,
-                            iconEnabledColor: Colors.black,
-                            dropdownColor: Colors.white,
-                            underline: Container(),
-                            // isExpanded: true,
-                            items: const [
-                              DropdownMenuItem(
-                                value: "truck",
-                                child: Text("Truck"),
-                              ),
-                              DropdownMenuItem(
-                                value: "heaven",
-                                child: Text("Heaven"),
-                              ),
-                              DropdownMenuItem(
-                                value: "lakeside",
-                                child: Text("Lakeside"),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 15.0),
-                  Expanded(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 34.0),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10.0, vertical: 10.0),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Vehicle Count",
-                              style: GoogleFonts.lato(
-                                textStyle: const TextStyle(
-                                  fontSize: 16.0,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 15.0),
-                            Text(
-                              "$vehicleCount",
-                              style: GoogleFonts.lato(
-                                textStyle: const TextStyle(
-                                  fontSize: 16.0,
-                                ),
-                              ),
-                            ),
-                          ],
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 10.0),
+                      FutureBuilder(
+                        future: servicesData,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CircularProgressIndicator();
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          } else if (snapshot.hasData) {
+                            var jsonData = json.decode(snapshot.data!.body);
+                            var services = jsonData["results"] as List;
+
+                            // serviceValue = services[0]["Name"].toString();
+                            List<DropdownMenuItem> widgetList = services
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s["Name"],
+                                    child: Text(s["Name"]),
+                                  ),
+                                )
+                                .toList();
+
+                            return Expanded(
+                              child: DropdownButton(
+                                value: serviceValue,
+                                onChanged: (value) {
+                                  var service = services
+                                      .where((p) => p["Name"] == value)
+                                      .toList();
+
+                                  setState(() {
+                                    // serviceValue = name.toString();
+                                    vehiclesData =
+                                        getServiceVehicles(service[0]["ID"]);
+                                    serviceValue = service[0]["Name"];
+                                  });
+                                },
+                                style: GoogleFonts.lato(
+                                  textStyle: const TextStyle(
+                                    fontSize: 14.0,
+                                  ),
+                                ),
+                                elevation: 16,
+                                iconEnabledColor: Colors.black,
+                                dropdownColor: Colors.white,
+                                underline: Container(),
+                                isExpanded: true,
+                                items: widgetList,
+                              ),
+                            );
+                          } else {
+                            return const Text('Try Again');
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  // const SizedBox(height: 5.0),
+                  Row(
+                    children: [
+                      Text(
+                        "Select Parking: ",
+                        style: GoogleFonts.lato(
+                          textStyle: const TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10.0),
+                      FutureBuilder(
+                        future: parkingList,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CircularProgressIndicator();
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          } else if (snapshot.hasData) {
+                            var jsonData = json.decode(snapshot.data!.body);
+                            var parkings = jsonData["results"] as List;
+
+                            // serviceValue = parkings[0]["Name"].toString();
+                            List<DropdownMenuItem> widgetList = parkings
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s["Codename"],
+                                    child: Text(s["Codename"]),
+                                  ),
+                                )
+                                .toList();
+
+                            return Expanded(
+                              child: DropdownButton(
+                                value: parkingValue,
+                                onChanged: (value) {
+                                  // get parking
+                                  var parking = parkings
+                                      .where((p) => p["Codename"] == value)
+                                      .toList();
+
+                                  setState(() {
+                                    vehiclesData =
+                                        getParkingVehicles(parking[0]["ID"]);
+                                    parkingValue = parking[0]["Codename"];
+                                  });
+
+                                  // fetch service vehicles
+                                },
+                                style: GoogleFonts.lato(
+                                  textStyle: const TextStyle(
+                                    fontSize: 14.0,
+                                  ),
+                                ),
+                                elevation: 16,
+                                iconEnabledColor: Colors.black,
+                                dropdownColor: Colors.white,
+                                underline: Container(),
+                                isExpanded: true,
+                                items: widgetList,
+                              ),
+                            );
+                          } else {
+                            return const Text('Try Again');
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20.0),
-            DataTable(
-              border: TableBorder.all(color: Colors.grey.shade200),
-              columns: const [
-                DataColumn(label: Text("License No")),
-                DataColumn(label: Text("Driver")),
-                DataColumn(label: Text("Checkout")),
-              ],
-              rows: [
-                DataRow(
-                  cells: const [
-                    DataCell(Text("UAX 234H")),
-                    DataCell(Text("Phillip Mugisa")),
-                    DataCell(Text("20:30")),
-                  ],
-                  onSelectChanged: (isSelected) {
-                    if (isSelected != null && isSelected) {
-                      Navigator.pushNamed(context, "/driver_details",
-                          arguments: "UAX 234H");
-                    }
-                  },
-                ),
-                DataRow(
-                  cells: const [
-                    DataCell(Text("UAX 234H")),
-                    DataCell(Text("Mukwano Mark")),
-                    DataCell(Text("Still In")),
-                  ],
-                  onSelectChanged: (isSelected) {
-                    if (isSelected != null && isSelected) {
-                      Navigator.pushNamed(context, "/driver_details",
-                          arguments: "UAX 234H");
-                    }
-                  },
-                ),
-                DataRow(
-                  cells: const [
-                    DataCell(Text("UAX 234H")),
-                    DataCell(Text("Alex Okello")),
-                    DataCell(Text("Still In")),
-                  ],
-                  onSelectChanged: (isSelected) {
-                    if (isSelected != null && isSelected) {
-                      Navigator.pushNamed(context, "/driver_details",
-                          arguments: "UAX 234H");
-                    }
-                  },
-                ),
-                DataRow(
-                  cells: const [
-                    DataCell(Text("UBH 444K")),
-                    DataCell(Text("Barbra Ayo")),
-                    DataCell(Text("20:20")),
-                  ],
-                  onSelectChanged: (isSelected) {
-                    if (isSelected != null && isSelected) {
-                      Navigator.pushNamed(context, "/driver_details",
-                          arguments: "UBH 444K");
-                    }
-                  },
-                ),
-              ],
-            ),
+            VehicleList(vehiclesData: vehiclesData),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {},
-          child: const Icon(
-            Icons.record_voice_over,
-          ),
-        ),
+        // floatingActionButton: FloatingActionButton(
+        //   onPressed: () {},
+        //   child: const Icon(
+        //     Icons.record_voice_over,
+        //   ),
+        // ),
         bottomNavigationBar: NavigationBar(
           backgroundColor: Colors.white,
           indicatorColor: Colors.grey.shade300,
@@ -331,5 +279,168 @@ class _RecordsScreenState extends State<RecordsScreen> {
         ),
       ),
     );
+  }
+}
+
+class VehicleList extends StatelessWidget {
+  const VehicleList({
+    super.key,
+    required this.vehiclesData,
+  });
+
+  final Future vehiclesData;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+        future: vehiclesData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          } else if (snapshot.hasData) {
+            var jsonData = json.decode(snapshot.data!.body);
+            if (jsonData["results"] == null || jsonData["results"] == Null) {
+              return const Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 20,
+                  ),
+                  Text("No vehicles registered yet.")
+                ],
+              );
+            }
+
+            var vehicles = jsonData["results"] as List;
+            int vehicleCount = vehicles.length;
+
+            List<DataRow> widgetList = vehicles
+                .map(
+                  (vehicle) => DataRow(
+                    cells: [
+                      DataCell(
+                        Text(vehicle["LicenseNumber"]),
+                      ),
+                      DataCell(
+                        Text(vehicle["Fullname"]),
+                      ),
+                      vehicle["IsCheckedOut"]["Bool"] == true
+                          ? const DataCell(
+                              Text(
+                                "OUT",
+                                style: TextStyle(
+                                    color: Colors.greenAccent,
+                                    fontSize: 12.0,
+                                    fontWeight: FontWeight.w700),
+                              ),
+                            )
+                          : const DataCell(
+                              Text(
+                                "IN",
+                                style: TextStyle(
+                                    color: Colors.redAccent,
+                                    fontSize: 12.0,
+                                    fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                    ],
+                    onSelectChanged: (isSelected) {
+                      if (isSelected != null && isSelected) {
+                        Map<String, dynamic> data = {
+                          'licenseNo': vehicle["LicenseNumber"],
+                          "id": vehicle["ID"]
+                        };
+                        Navigator.pushNamed(context, "/driver_details",
+                            arguments: data);
+                      }
+                    },
+                  ),
+                )
+                .toList();
+
+            return Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        "Vehicle Count",
+                        style: GoogleFonts.lato(
+                          textStyle: const TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 20.0),
+                      Text(
+                        "$vehicleCount",
+                        style: GoogleFonts.lato(
+                          textStyle: const TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    height: 40.0,
+                  ),
+                  DataTable(
+                    border: TableBorder.all(color: Colors.grey.shade200),
+                    columns: [
+                      DataColumn(
+                          label: Text(
+                        "License No",
+                        style: GoogleFonts.lato(
+                          textStyle: const TextStyle(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )),
+                      DataColumn(
+                          label: Text(
+                        "Driver",
+                        style: GoogleFonts.lato(
+                          textStyle: const TextStyle(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )),
+                      DataColumn(
+                          label: Text(
+                        "Status",
+                        style: GoogleFonts.lato(
+                          textStyle: const TextStyle(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )),
+                    ],
+                    rows: widgetList,
+                  ),
+                ],
+              ),
+            );
+          } else {
+            return Text(
+              'Try Again',
+              style: GoogleFonts.lato(
+                textStyle: const TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            );
+          }
+        });
   }
 }
