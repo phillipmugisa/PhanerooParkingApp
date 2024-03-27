@@ -1,4 +1,5 @@
-const String backendUrl = "http://localhost:8000";
+// const String backendUrl = "http://localhost:8000";
+const String backendUrl = "http://parkingpro.mugisa.tech";
 
 // vehicles
 const String listVehiclesRoute = "$backendUrl/vehicles";

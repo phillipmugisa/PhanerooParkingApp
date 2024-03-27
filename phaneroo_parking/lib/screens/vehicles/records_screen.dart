@@ -21,6 +21,8 @@ class _RecordsScreenState extends State<RecordsScreen> {
   late Future parkingList;
 
   TextEditingController searchController = TextEditingController();
+  final TextEditingController servicesController = TextEditingController();
+  final TextEditingController parkingController = TextEditingController();
 
   @override
   void initState() {
@@ -71,154 +73,93 @@ class _RecordsScreenState extends State<RecordsScreen> {
               ),
             ),
             const SizedBox(height: 20.0),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: Wrap(
-                direction: Axis.horizontal,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        "Select Service: ",
-                        style: GoogleFonts.lato(
-                          textStyle: const TextStyle(
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10.0),
-                      FutureBuilder(
-                        future: servicesData,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const CircularProgressIndicator();
-                          } else if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          } else if (snapshot.hasData) {
-                            var jsonData = json.decode(snapshot.data!.body);
-                            var services = jsonData["results"] as List;
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                FutureBuilder(
+                  future: servicesData,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else if (snapshot.hasData) {
+                      var jsonData = json.decode(snapshot.data!.body);
+                      var services = jsonData["results"] as List;
 
-                            // serviceValue = services[0]["Name"].toString();
-                            List<DropdownMenuItem> widgetList = services
-                                .map(
-                                  (s) => DropdownMenuItem(
-                                    value: s["Name"],
-                                    child: Text(s["Name"]),
-                                  ),
-                                )
+                      return DropdownMenu(
+                        initialSelection: services[0]["Name"],
+                        controller: servicesController,
+                        requestFocusOnTap: true,
+                        label: const Text('Service'),
+                        onSelected: (value) {
+                          setState(() {
+                            var service = services
+                                .where((p) => p["Name"] == value)
                                 .toList();
 
-                            return Expanded(
-                              child: DropdownButton(
-                                value: serviceValue,
-                                onChanged: (value) {
-                                  var service = services
-                                      .where((p) => p["Name"] == value)
-                                      .toList();
-
-                                  setState(() {
-                                    // serviceValue = name.toString();
-                                    vehiclesData =
-                                        getServiceVehicles(service[0]["ID"]);
-                                    serviceValue = service[0]["Name"];
-                                  });
-                                },
-                                style: GoogleFonts.lato(
-                                  textStyle: const TextStyle(
-                                    fontSize: 14.0,
-                                  ),
-                                ),
-                                elevation: 16,
-                                iconEnabledColor: Colors.black,
-                                dropdownColor: Colors.white,
-                                underline: Container(),
-                                isExpanded: true,
-                                items: widgetList,
-                              ),
-                            );
-                          } else {
-                            return const Text('Try Again');
-                          }
+                            setState(() {
+                              // serviceValue = name.toString();
+                              vehiclesData =
+                                  getServiceVehicles(service[0]["ID"]);
+                            });
+                          });
                         },
-                      ),
-                    ],
-                  ),
-                  // const SizedBox(height: 5.0),
-                  Row(
-                    children: [
-                      Text(
-                        "Select Parking: ",
-                        style: GoogleFonts.lato(
-                          textStyle: const TextStyle(
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10.0),
-                      FutureBuilder(
-                        future: parkingList,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const CircularProgressIndicator();
-                          } else if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          } else if (snapshot.hasData) {
-                            var jsonData = json.decode(snapshot.data!.body);
-                            var parkings = jsonData["results"] as List;
+                        dropdownMenuEntries: services
+                            .map((v) => DropdownMenuEntry(
+                                  value: v["Name"],
+                                  label: v["Name"],
+                                ))
+                            .toList(),
+                      );
+                    } else {
+                      return const Text('Try Again');
+                    }
+                  },
+                ),
+                const SizedBox(width: 10),
+                FutureBuilder(
+                  future: parkingList,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else if (snapshot.hasData) {
+                      var jsonData = json.decode(snapshot.data!.body);
+                      var parkings = jsonData["results"] as List;
 
-                            // serviceValue = parkings[0]["Name"].toString();
-                            List<DropdownMenuItem> widgetList = parkings
-                                .map(
-                                  (s) => DropdownMenuItem(
-                                    value: s["Codename"],
-                                    child: Text(s["Codename"]),
-                                  ),
-                                )
+                      return DropdownMenu(
+                        initialSelection: parkings[0]["Codename"],
+                        controller: parkingController,
+                        requestFocusOnTap: true,
+                        label: const Text('Parking'),
+                        onSelected: (value) {
+                          setState(() {
+                            var parking = parkings
+                                .where((p) => p["Codename"] == value)
                                 .toList();
 
-                            return Expanded(
-                              child: DropdownButton(
-                                value: parkingValue,
-                                onChanged: (value) {
-                                  // get parking
-                                  var parking = parkings
-                                      .where((p) => p["Codename"] == value)
-                                      .toList();
-
-                                  setState(() {
-                                    vehiclesData =
-                                        getParkingVehicles(parking[0]["ID"]);
-                                    parkingValue = parking[0]["Codename"];
-                                  });
-
-                                  // fetch service vehicles
-                                },
-                                style: GoogleFonts.lato(
-                                  textStyle: const TextStyle(
-                                    fontSize: 14.0,
-                                  ),
-                                ),
-                                elevation: 16,
-                                iconEnabledColor: Colors.black,
-                                dropdownColor: Colors.white,
-                                underline: Container(),
-                                isExpanded: true,
-                                items: widgetList,
-                              ),
-                            );
-                          } else {
-                            return const Text('Try Again');
-                          }
+                            setState(() {
+                              // serviceValue = name.toString();
+                              vehiclesData =
+                                  getParkingVehicles(parking[0]["ID"]);
+                            });
+                          });
                         },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                        dropdownMenuEntries: parkings
+                            .map((v) => DropdownMenuEntry(
+                                  value: v["Codename"],
+                                  label: v["Codename"],
+                                ))
+                            .toList(),
+                      );
+                    } else {
+                      return const Text('Try Again');
+                    }
+                  },
+                )
+              ],
             ),
             VehicleList(vehiclesData: vehiclesData),
           ],
@@ -389,14 +330,14 @@ class VehicleList extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(
-                    height: 40.0,
+                    height: 10.0,
                   ),
                   DataTable(
                     border: TableBorder.all(color: Colors.grey.shade200),
                     columns: [
                       DataColumn(
                           label: Text(
-                        "License No",
+                        "License",
                         style: GoogleFonts.lato(
                           textStyle: const TextStyle(
                             fontSize: 14.0,

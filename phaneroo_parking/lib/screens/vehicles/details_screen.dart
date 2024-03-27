@@ -118,7 +118,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Error'),
-            content: const Text('Unable to register vehicle'),
+            content: const Text('Unable to update vehicle details'),
             actions: <Widget>[
               TextButton(
                 onPressed: () => Navigator.pop(context, 'OK'),

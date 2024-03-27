@@ -51,7 +51,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       Column(
                         children: [
                           Text(
-                            "BMW",
+                            "Benz",
                             style: GoogleFonts.lato(
                               textStyle: const TextStyle(
                                 fontSize: 20.0,
@@ -61,7 +61,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           ),
                           const SizedBox(height: 5.0),
                           Text(
-                            "Mugisa Phillip",
+                            "Andrew Mukulu",
                             style: GoogleFonts.lato(
                               textStyle: const TextStyle(
                                 fontSize: 16.0,
