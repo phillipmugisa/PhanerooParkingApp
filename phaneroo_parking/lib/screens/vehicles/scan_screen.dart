@@ -595,9 +595,12 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
                     bottom: 15,
                     right: 15,
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         isScanning = true;
-                        _scanImage();
+                        String licenceNo = await _scanImage();
+                        if (licenceNo.isNotEmpty) {
+                          widget.populateFields!(licenceNo.split('\n')[0]);
+                        }
 
                         return;
                       },
@@ -706,9 +709,14 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     setState(() {});
   }
 
-  Future<void> _scanImage() async {
-    if (_cameraController == null) return;
+  Future<String> _scanImage() async {
+    if (_cameraController == null) return "";
     try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Scanning"),
+        ),
+      );
       final pictureFile = await _cameraController!.takePicture();
 
       final file = File(pictureFile.path);
@@ -716,21 +724,19 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       final inputImage = InputImage.fromFile(file);
       final recognizedText = await textRecognizer.processImage(inputImage);
 
-      if (pattern.hasMatch(recognizedText.text)) {
-        // widget.populateFields(recognizedText.text);
-      }
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(recognizedText.text),
         ),
       );
+      return recognizedText.text;
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('An error occurred when scanning text'),
         ),
       );
+      return "";
     }
   }
 }
