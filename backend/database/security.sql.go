@@ -35,21 +35,23 @@ func (q *Queries) CreateAllocation(ctx context.Context, arg CreateAllocationPara
 }
 
 const createDepartment = `-- name: CreateDepartment :execresult
-INSERT INTO department(name, codename, created_at, updated_at)
-VALUES($1, $2, $3, $4)
+INSERT INTO department(name, codename, accessCode, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5)
 `
 
 type CreateDepartmentParams struct {
-	Name      string
-	Codename  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Name       string
+	Codename   string
+	Accesscode sql.NullString
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 func (q *Queries) CreateDepartment(ctx context.Context, arg CreateDepartmentParams) (sql.Result, error) {
 	return q.db.ExecContext(ctx, createDepartment,
 		arg.Name,
 		arg.Codename,
+		arg.Accesscode,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -100,13 +102,14 @@ func (q *Queries) CreateParkingStation(ctx context.Context, arg CreateParkingSta
 }
 
 const createService = `-- name: CreateService :execresult
-INSERT INTO service(name, date, created_at, updated_at)
-VALUES($1, $2, $3, $4)
+INSERT INTO service(name, date, time, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5)
 `
 
 type CreateServiceParams struct {
 	Name      string
 	Date      time.Time
+	Time      sql.NullTime
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -115,14 +118,15 @@ func (q *Queries) CreateService(ctx context.Context, arg CreateServiceParams) (s
 	return q.db.ExecContext(ctx, createService,
 		arg.Name,
 		arg.Date,
+		arg.Time,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
 }
 
 const createTeamMember = `-- name: CreateTeamMember :execresult
-INSERT INTO team_member(fullname, codename, phone_number, email, is_team_leader, is_admin, department_id, created_at, updated_at)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO team_member(fullname, codename, phone_number, email, password, is_team_leader, is_admin, department_id, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 `
 
 type CreateTeamMemberParams struct {
@@ -130,6 +134,7 @@ type CreateTeamMemberParams struct {
 	Codename     string
 	PhoneNumber  string
 	Email        sql.NullString
+	Password     sql.NullString
 	IsTeamLeader sql.NullBool
 	IsAdmin      sql.NullBool
 	DepartmentID int32
@@ -143,12 +148,49 @@ func (q *Queries) CreateTeamMember(ctx context.Context, arg CreateTeamMemberPara
 		arg.Codename,
 		arg.PhoneNumber,
 		arg.Email,
+		arg.Password,
 		arg.IsTeamLeader,
 		arg.IsAdmin,
 		arg.DepartmentID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
+}
+
+const getDepartment = `-- name: GetDepartment :one
+SELECT id, name, codename, created_at, updated_at, accesscode FROM department WHERE id = $1
+`
+
+func (q *Queries) GetDepartment(ctx context.Context, id int32) (Department, error) {
+	row := q.db.QueryRowContext(ctx, getDepartment, id)
+	var i Department
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Codename,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Accesscode,
+	)
+	return i, err
+}
+
+const getDepartmentByCode = `-- name: GetDepartmentByCode :one
+SELECT id, name, codename, created_at, updated_at, accesscode FROM department WHERE codename = $1 OR accessCode = $1
+`
+
+func (q *Queries) GetDepartmentByCode(ctx context.Context, codename string) (Department, error) {
+	row := q.db.QueryRowContext(ctx, getDepartmentByCode, codename)
+	var i Department
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Codename,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Accesscode,
+	)
+	return i, err
 }
 
 const getParkingSession = `-- name: GetParkingSession :one
@@ -187,7 +229,7 @@ func (q *Queries) GetParkingStation(ctx context.Context, id int32) (Parkingstati
 }
 
 const getService = `-- name: GetService :one
-SELECT id, name, date, created_at, updated_at FROM service WHERE id = $1
+SELECT id, name, date, created_at, updated_at, time FROM service WHERE id = $1
 `
 
 func (q *Queries) GetService(ctx context.Context, id int32) (Service, error) {
@@ -199,8 +241,89 @@ func (q *Queries) GetService(ctx context.Context, id int32) (Service, error) {
 		&i.Date,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Time,
 	)
 	return i, err
+}
+
+const getTeamMemberByCodeName = `-- name: GetTeamMemberByCodeName :one
+SELECT id, fullname, codename, phone_number, email, is_team_leader, is_admin, department_id FROM team_member WHERE codename = $1
+`
+
+type GetTeamMemberByCodeNameRow struct {
+	ID           int32
+	Fullname     string
+	Codename     string
+	PhoneNumber  string
+	Email        sql.NullString
+	IsTeamLeader sql.NullBool
+	IsAdmin      sql.NullBool
+	DepartmentID int32
+}
+
+func (q *Queries) GetTeamMemberByCodeName(ctx context.Context, codename string) (GetTeamMemberByCodeNameRow, error) {
+	row := q.db.QueryRowContext(ctx, getTeamMemberByCodeName, codename)
+	var i GetTeamMemberByCodeNameRow
+	err := row.Scan(
+		&i.ID,
+		&i.Fullname,
+		&i.Codename,
+		&i.PhoneNumber,
+		&i.Email,
+		&i.IsTeamLeader,
+		&i.IsAdmin,
+		&i.DepartmentID,
+	)
+	return i, err
+}
+
+const getTeamMemberByID = `-- name: GetTeamMemberByID :one
+SELECT team_member.id, fullname, team_member.codename, phone_number, email, is_team_leader, is_admin, department_id, department.codename, department.name
+FROM team_member
+JOIN department ON department_id = department.id
+WHERE team_member.id = $1
+`
+
+type GetTeamMemberByIDRow struct {
+	ID           int32
+	Fullname     string
+	Codename     string
+	PhoneNumber  string
+	Email        sql.NullString
+	IsTeamLeader sql.NullBool
+	IsAdmin      sql.NullBool
+	DepartmentID int32
+	Codename_2   string
+	Name         string
+}
+
+func (q *Queries) GetTeamMemberByID(ctx context.Context, id int32) (GetTeamMemberByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getTeamMemberByID, id)
+	var i GetTeamMemberByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Fullname,
+		&i.Codename,
+		&i.PhoneNumber,
+		&i.Email,
+		&i.IsTeamLeader,
+		&i.IsAdmin,
+		&i.DepartmentID,
+		&i.Codename_2,
+		&i.Name,
+	)
+	return i, err
+}
+
+const getTeamMemberHashedPwd = `-- name: GetTeamMemberHashedPwd :one
+SELECT password FROM team_member WHERE codename = $1
+`
+
+func (q *Queries) GetTeamMemberHashedPwd(ctx context.Context, codename string) (sql.NullString, error) {
+	row := q.db.QueryRowContext(ctx, getTeamMemberHashedPwd, codename)
+	var password sql.NullString
+	err := row.Scan(&password)
+	return password, err
 }
 
 const listAllocation = `-- name: ListAllocation :many
@@ -238,7 +361,7 @@ func (q *Queries) ListAllocation(ctx context.Context) ([]Allocation, error) {
 }
 
 const listDepartment = `-- name: ListDepartment :many
-SELECT id, name, codename, created_at, updated_at FROM department ORDER BY ID DESC
+SELECT id, name, codename, created_at, updated_at, accesscode FROM department ORDER BY ID DESC
 `
 
 func (q *Queries) ListDepartment(ctx context.Context) ([]Department, error) {
@@ -256,6 +379,7 @@ func (q *Queries) ListDepartment(ctx context.Context) ([]Department, error) {
 			&i.Codename,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Accesscode,
 		); err != nil {
 			return nil, err
 		}
@@ -338,7 +462,7 @@ func (q *Queries) ListParkingStation(ctx context.Context) ([]Parkingstation, err
 }
 
 const listService = `-- name: ListService :many
-SELECT id, name, date, created_at, updated_at FROM service ORDER BY ID DESC
+SELECT id, name, date, created_at, updated_at, time FROM service ORDER BY ID DESC
 `
 
 func (q *Queries) ListService(ctx context.Context) ([]Service, error) {
@@ -356,6 +480,7 @@ func (q *Queries) ListService(ctx context.Context) ([]Service, error) {
 			&i.Date,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Time,
 		); err != nil {
 			return nil, err
 		}
@@ -371,18 +496,29 @@ func (q *Queries) ListService(ctx context.Context) ([]Service, error) {
 }
 
 const listTeamMember = `-- name: ListTeamMember :many
-SELECT id, fullname, codename, phone_number, email, is_team_leader, is_admin, department_id, created_at, updated_at FROM team_member ORDER BY ID DESC
+SELECT id, fullname, codename, phone_number, email, is_team_leader, is_admin, department_id FROM team_member ORDER BY ID DESC
 `
 
-func (q *Queries) ListTeamMember(ctx context.Context) ([]TeamMember, error) {
+type ListTeamMemberRow struct {
+	ID           int32
+	Fullname     string
+	Codename     string
+	PhoneNumber  string
+	Email        sql.NullString
+	IsTeamLeader sql.NullBool
+	IsAdmin      sql.NullBool
+	DepartmentID int32
+}
+
+func (q *Queries) ListTeamMember(ctx context.Context) ([]ListTeamMemberRow, error) {
 	rows, err := q.db.QueryContext(ctx, listTeamMember)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []TeamMember
+	var items []ListTeamMemberRow
 	for rows.Next() {
-		var i TeamMember
+		var i ListTeamMemberRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Fullname,
@@ -392,8 +528,6 @@ func (q *Queries) ListTeamMember(ctx context.Context) ([]TeamMember, error) {
 			&i.IsTeamLeader,
 			&i.IsAdmin,
 			&i.DepartmentID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}

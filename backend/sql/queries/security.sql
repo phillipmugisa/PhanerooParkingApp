@@ -1,6 +1,6 @@
 -- name: CreateService :execresult
-INSERT INTO service(name, date, created_at, updated_at)
-VALUES($1, $2, $3, $4);
+INSERT INTO service(name, date, time, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5);
 
 -- name: ListService :many
 SELECT * FROM service ORDER BY ID DESC;
@@ -33,21 +33,37 @@ SELECT * FROM parkingsession WHERE id = $1;
 
 
 -- name: CreateDepartment :execresult
-INSERT INTO department(name, codename, created_at, updated_at)
-VALUES($1, $2, $3, $4);
+INSERT INTO department(name, codename, accessCode, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5);
 
 -- name: ListDepartment :many
 SELECT * FROM department ORDER BY ID DESC;
 
+-- name: GetDepartment :one
+SELECT * FROM department WHERE id = $1;
+
+-- name: GetDepartmentByCode :one
+SELECT * FROM department WHERE codename = $1 OR accessCode = $1;
 
 
 -- name: CreateTeamMember :execresult
-INSERT INTO team_member(fullname, codename, phone_number, email, is_team_leader, is_admin, department_id, created_at, updated_at)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9);
+INSERT INTO team_member(fullname, codename, phone_number, email, password, is_team_leader, is_admin, department_id, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
 
 -- name: ListTeamMember :many
-SELECT * FROM team_member ORDER BY ID DESC;
+SELECT id, fullname, codename, phone_number, email, is_team_leader, is_admin, department_id FROM team_member ORDER BY ID DESC;
 
+-- name: GetTeamMemberByID :one
+SELECT team_member.id, fullname, team_member.codename, phone_number, email, is_team_leader, is_admin, department_id, department.codename, department.name
+FROM team_member
+JOIN department ON department_id = department.id
+WHERE team_member.id = $1;
+
+-- name: GetTeamMemberByCodeName :one
+SELECT id, fullname, codename, phone_number, email, is_team_leader, is_admin, department_id FROM team_member WHERE codename = $1;
+
+-- name: GetTeamMemberHashedPwd :one
+SELECT password FROM team_member WHERE codename = $1;
 
 
 -- name: CreateAllocation :execresult

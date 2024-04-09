@@ -615,7 +615,7 @@ func (q *Queries) ListVehicle(ctx context.Context) ([]ListVehicleRow, error) {
 }
 
 const searchVehicle = `-- name: SearchVehicle :many
-SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id WHERE vehicle.license_number LIKE '%'||$1||'%' OR driver.fullname LIKE '%'||$1||'%'
+SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id WHERE vehicle.license_number LIKE '%'||$1||'%' OR driver.fullname LIKE '%'||$1||'%'  ORDER BY vehicle.created_at DESC
 `
 
 type SearchVehicleRow struct {

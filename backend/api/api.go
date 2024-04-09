@@ -39,28 +39,43 @@ func (a *AppServer) Run() *http.Server {
 }
 
 func (a *AppServer) registerRoutes(r *chi.Mux) {
-	r.Get("/vehicles", MakeApiHandler(a.ListVehiclesHandler))
-	r.Get("/vehicles/{id}", MakeApiHandler(a.GetVehiclesHandler))
-	r.Patch("/vehicles/{id}/update", MakeApiHandler(a.UpdateVehiclesHandler))
-	r.Patch("/vehicles/{id}/checkout", MakeApiHandler(a.CheckoutVehiclesHandler))
-	r.Post("/vehicles/register", MakeApiHandler(a.RegisterVehicleHandler))
-	r.Get("/vehicles/search", MakeApiHandler(a.SearchVehicleHandler))
-	// r.Get("/parkingsessions/details", MakeApiHandler(a.GetVehicleParkingSessionHandler))
+	r.Get("/vehicles", a.AuthedHandler(a.ListVehiclesHandler))
+	r.Get("/vehicles/{id}", a.AuthedHandler(a.GetVehiclesHandler))
+	r.Patch("/vehicles/{id}/update", a.AuthedHandler(a.UpdateVehiclesHandler))
+	r.Patch("/vehicles/{id}/checkout", a.AuthedHandler(a.CheckoutVehiclesHandler))
+	r.Post("/vehicles/register", a.AuthedHandler(a.RegisterVehicleHandler))
+	r.Get("/vehicles/search", a.AuthedHandler(a.SearchVehicleHandler))
+	// r.Get("/parkingsessions/details", a.AuthedHandler(a.GetVehicleParkingSessionHandler))
 
-	r.Get("/drivers", MakeApiHandler(a.ListDriversHandler))
-	r.Get("/drivers/{id}", MakeApiHandler(a.GetDriversHandler))
+	r.Get("/drivers", a.AuthedHandler(a.ListDriversHandler))
+	r.Get("/drivers/{id}", a.AuthedHandler(a.GetDriversHandler))
 
-	r.Get("/parkingsessions", MakeApiHandler(a.ListParkingSessionHandler))
-	r.Post("/parkingsessions/register", MakeApiHandler(a.CreateParkingSessionHandler))
-	r.Get("/parkingsessions/details/{id}", MakeApiHandler(a.GetParkingSessionHandler))
+	// security
+	r.Get("/parkingsessions", a.AuthedHandler(a.ListParkingSessionHandler))
+	r.Post("/parkingsessions/register", a.AuthedHandler(a.CreateParkingSessionHandler))
+	r.Get("/parkingsessions/details/{id}", a.AuthedHandler(a.GetParkingSessionHandler))
 
-	r.Get("/parkingstations", MakeApiHandler(a.ListParkingStationHandler))
-	r.Post("/parkingstations/register", MakeApiHandler(a.CreateParkingStationHandler))
-	r.Get("/parkingstations/details/{id}", MakeApiHandler(a.GetParkingStationHandler))
-	r.Get("/parkingstations/{id}/vehicles", MakeApiHandler(a.GetParkingStationVehiclesHandler))
+	r.Get("/parkingstations", a.AuthedHandler(a.ListParkingStationHandler))
+	r.Post("/parkingstations/register", a.AuthedHandler(a.CreateParkingStationHandler))
+	r.Get("/parkingstations/details/{id}", a.AuthedHandler(a.GetParkingStationHandler))
+	r.Get("/parkingstations/{id}/vehicles", a.AuthedHandler(a.GetParkingStationVehiclesHandler))
 
-	r.Get("/services", MakeApiHandler(a.ListServicerHandler))
-	r.Post("/services/register", MakeApiHandler(a.CreateServicerHandler))
-	r.Get("/services/details/{id}", MakeApiHandler(a.GetServicerHandler))
-	r.Get("/service/{id}/vehicles", MakeApiHandler(a.GetServiceVehicleHandler))
+	r.Get("/services", a.AuthedHandler(a.ListServicerHandler))
+	r.Post("/services/register", a.AuthedHandler(a.CreateServicerHandler))
+	r.Get("/services/details/{id}", a.AuthedHandler(a.GetServicerHandler))
+	r.Get("/service/{id}/vehicles", a.AuthedHandler(a.GetServiceVehicleHandler))
+
+	r.Get("/departments", a.AuthedHandler(a.ListDepartmentsHandler))
+	r.Get("/departments/{id}", a.AuthedHandler(a.GetDepartmentHandler))
+	r.Post("/departments/create", a.AuthedHandler(a.CreateDepartmentHandler))
+
+	// auth
+	r.Get("/users", a.AuthedHandler(a.ListUserHandler))
+	r.Get("/users/{id}", a.AuthedHandler(a.GetUserHandler))
+	r.Get("/users/current", a.AuthedHandler(a.GetAuthedUserHandler))
+	r.Post("/register", MakeApiHandler(a.RegisterUserHandler))
+	r.Post("/login", MakeApiHandler(a.LoginHandler))
+	r.Get("/logout", MakeApiHandler(a.LogoutHandler))
+	r.Post("/refresh/token", MakeApiHandler(a.RefreshTokenHandler))
+
 }

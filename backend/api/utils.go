@@ -19,6 +19,25 @@ func MakeApiHandler(h ApiHandler) http.HandlerFunc {
 	}
 }
 
+func (a *AppServer) AuthedHandler(h ApiHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		ctx := context.Background()
+
+		validation_err := a.ValidateRequest(ctx, r)
+		if validation_err != nil {
+			HandleApiError(w, validation_err)
+			return
+		}
+
+		err := h(ctx, w, r)
+		if err != nil {
+			HandleApiError(w, err)
+			return
+		}
+	}
+}
+
 func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) *ApiError {
 	data, err := json.Marshal(payload)
 	if err != nil {

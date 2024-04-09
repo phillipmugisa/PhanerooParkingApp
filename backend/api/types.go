@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/phillipmugisa/PhanerooParkingApp/database"
 )
 
@@ -132,4 +133,35 @@ type ParkingStationData struct {
 type ServiceData struct {
 	Name string    `json:"name"`
 	Date time.Time `json:"date"`
+	Time time.Time `json:"time"`
+}
+
+type DepartmentData struct {
+	Name       string `json:"name"`
+	Codename   string `json:"codename"`
+	AccessCode string `json:"accessCode"`
+}
+
+type UserData struct {
+	Fullname        string `json:"fullname"`
+	Codename        string `json:"codename"`
+	Phone_number    string `json:"phone_number"`
+	Email           string `json:"email"`
+	Is_team_leader  bool   `json:"is_team_leader"`
+	Is_admin        bool   `json:"is_admin"`
+	Department_ID   int    `json:"department_id"`
+	AccessCode      string `json:"accessCode,omitempty"`
+	Password        string `json:"password,omitempty"`
+	ConfirmPassword string `json:"confirm_password,omitempty"`
+}
+
+type UserClaims struct {
+	ID       int32  `json:"id,omitempty"`
+	Codename string `json:"codename,omitempty"`
+	jwt.StandardClaims
+}
+
+type TokenResponse struct {
+	AccessToken  string `json:"access_token,omitempty"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 }

@@ -19,11 +19,12 @@ type Allocation struct {
 }
 
 type Department struct {
-	ID        int32
-	Name      string
-	Codename  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID         int32
+	Name       string
+	Codename   string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	Accesscode sql.NullString
 }
 
 type Driver struct {
@@ -33,6 +34,16 @@ type Driver struct {
 	Email       sql.NullString
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+}
+
+type JwtToken struct {
+	ID           int32
+	AccessToken  string
+	TeamMemberID int32
+	IsValid      sql.NullBool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	RefreshToken sql.NullString
 }
 
 type Parkingsession struct {
@@ -58,6 +69,7 @@ type Service struct {
 	Date      time.Time
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	Time      sql.NullTime
 }
 
 type TeamMember struct {
@@ -71,6 +83,7 @@ type TeamMember struct {
 	DepartmentID int32
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	Password     sql.NullString
 }
 
 type Vehicle struct {
