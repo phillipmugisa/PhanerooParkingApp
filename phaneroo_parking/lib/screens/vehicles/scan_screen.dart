@@ -110,7 +110,13 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
           ),
         );
       }
-    }).catchError((err) {});
+    }).catchError((err) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No Internet connection'),
+        ),
+      );
+    });
   }
 
   void registerVehicle() {
@@ -170,7 +176,13 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
           ),
         );
       }
-    }).catchError((err) {});
+    }).catchError((err) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No Internet connection'),
+        ),
+      );
+    });
   }
 
   @override

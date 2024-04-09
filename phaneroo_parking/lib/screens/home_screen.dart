@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:phaneroo_parking/requests.dart';
+import 'dart:convert';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -8,33 +10,63 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late Future userData;
+
+  @override
+  void initState() {
+    super.initState();
+    userData = getCurrentUserRequest();
+  }
+
   @override
   Widget build(BuildContext context) {
     int currentScreenIndex = 0;
-
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 0),
-          children: const [
-            TopPageActions(),
-            SizedBox(height: 10.0),
-            // current user information
-            PersonnalDetails(),
-            SizedBox(height: 10.0),
-            ParkingStats(),
-            SizedBox(height: 10.0),
-            TeamList(),
-            SizedBox(height: 80.0),
-          ],
-        ),
-        // floatingActionButton: FloatingActionButton(
-        //   onPressed: () {},
-        //   child: const Icon(
-        //     Icons.record_voice_over,
-        //   ),
-        // ),
+        body: FutureBuilder(
+            future: userData,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                Future.delayed(Duration.zero, () {
+                  Navigator.pushNamed(context, '/login');
+                });
+                // Return an empty container while redirecting
+                return Container();
+              } else if (snapshot.hasData) {
+                final statusCode = snapshot.data!.statusCode;
+                if (statusCode >= 400 && statusCode < 500) {
+                  // Handle client errors (e.g., unauthorized)
+                  Future.delayed(Duration.zero, () {
+                    Navigator.pushNamed(context, '/login');
+                  });
+                  return Container(); // Return an empty container while redirecting
+                }
+                var jsonData = json.decode(snapshot.data!.body);
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 0),
+                  children: [
+                    // TopPageActions(),
+                    // SizedBox(height: 10.0),
+                    // current user information
+                    PersonnalDetails(userData: jsonData),
+                    const SizedBox(height: 10.0),
+                    const ParkingStats(),
+                    const SizedBox(height: 10.0),
+                    const TeamList(),
+                    const SizedBox(height: 80.0),
+                  ],
+                );
+              } else {
+                Future.delayed(Duration.zero, () {
+                  Navigator.pushNamed(context, '/login');
+                });
+                // Return an empty container while redirecting
+                return Container();
+              }
+            }),
         bottomNavigationBar: NavigationBar(
           backgroundColor: Colors.white,
           indicatorColor: Colors.grey.shade300,
@@ -253,9 +285,9 @@ class ParkingStats extends StatelessWidget {
 }
 
 class PersonnalDetails extends StatelessWidget {
-  const PersonnalDetails({
-    super.key,
-  });
+  final Map<String, dynamic> userData;
+
+  const PersonnalDetails({super.key, required this.userData});
 
   @override
   Widget build(BuildContext context) {
@@ -278,67 +310,67 @@ class PersonnalDetails extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 5.0),
-          const Column(
+          const SizedBox(height: 20.0),
+          Column(
             children: [
               Row(
                 children: [
-                  Text(
+                  const Text(
                     "Code Name: ",
                     style: TextStyle(
                       fontSize: 14.0,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(height: 2.5),
+                  const SizedBox(height: 5.0),
                   Text(
-                    "BWM",
-                    style: TextStyle(
+                    userData["Codename"],
+                    style: const TextStyle(
                       fontSize: 14.0,
                       fontWeight: FontWeight.normal,
-                      color: Colors.grey,
+                      color: Color.fromARGB(255, 8, 8, 8),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 5.0),
+              const SizedBox(height: 5.0),
               Row(
                 children: [
-                  Text(
+                  const Text(
                     "Department: ",
                     style: TextStyle(
                       fontSize: 14.0,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(height: 2.5),
+                  const SizedBox(height: 5.0),
                   Text(
-                    "General Parking",
-                    style: TextStyle(
+                    userData["Name"],
+                    style: const TextStyle(
                       fontSize: 14.0,
                       fontWeight: FontWeight.normal,
-                      color: Colors.grey,
+                      color: Color.fromARGB(255, 8, 8, 8),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 5.0),
+              const SizedBox(height: 5.0),
               Row(
                 children: [
-                  Text(
+                  const Text(
                     "Allocation: ",
                     style: TextStyle(
                       fontSize: 14.0,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(height: 2.5),
+                  const SizedBox(height: 2.5),
                   Text(
-                    "Truck",
-                    style: TextStyle(
+                    userData["Name"],
+                    style: const TextStyle(
                       fontSize: 14.0,
                       fontWeight: FontWeight.normal,
-                      color: Colors.grey,
+                      color: Color.fromARGB(255, 8, 8, 8),
                     ),
                   ),
                 ],

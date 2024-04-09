@@ -73,7 +73,13 @@ class _DetailsScreenState extends State<DetailsScreen> {
             ),
           );
         }
-      }).catchError((err) {});
+      }).catchError((err) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No Internet connection'),
+          ),
+        );
+      });
     } else {
       saveVehicle(data).then((response) {
         // var jsonData = json.decode(response.body);
@@ -107,7 +113,13 @@ class _DetailsScreenState extends State<DetailsScreen> {
             ),
           );
         }
-      }).catchError((err) {});
+      }).catchError((err) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No Internet connection'),
+          ),
+        );
+      });
     }
   }
 
@@ -142,7 +154,13 @@ class _DetailsScreenState extends State<DetailsScreen> {
           ),
         );
       }
-    }).catchError((err) {});
+    }).catchError((err) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No Internet connection'),
+        ),
+      );
+    });
   }
 
   void contactDriver() {}
@@ -174,7 +192,13 @@ class _DetailsScreenState extends State<DetailsScreen> {
           driverNameController.text = jsonData["Fullname"];
           driverTelNoController.text = jsonData["PhoneNumber"];
           driverEmailController.text = jsonData["Email"];
-        }).catchError((err) {});
+        }).catchError((err) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No Internet connection'),
+            ),
+          );
+        });
       }
 
       if (data["currentServiceId"] != null) {
@@ -467,7 +491,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
         //   ),
         // ),
         bottomNavigationBar: NavigationBar(
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.black,
           indicatorColor: Colors.grey.shade300,
           shadowColor: Colors.black87,
           selectedIndex: currentScreenIndex,

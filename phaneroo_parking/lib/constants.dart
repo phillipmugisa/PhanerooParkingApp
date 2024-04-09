@@ -1,5 +1,5 @@
-// const String backendUrl = "http://localhost:8000";
-const String backendUrl = "http://parkingpro.mugisa.tech";
+const String backendUrl = "http://localhost:8000";
+// const String backendUrl = "http://parkingpro.mugisa.tech";
 
 // vehicles
 const String listVehiclesRoute = "$backendUrl/vehicles";
@@ -16,3 +16,9 @@ const String listParkingStationsRoute = "$backendUrl/parkingstations";
 //     "$backendUrl/parkingstations/register";
 
 const String searchRoute = "$backendUrl/vehicles/search?q=";
+
+const String registerUserRoute = "$backendUrl/register";
+const String loginRoute = "$backendUrl/login";
+const String logoutRoute = "$backendUrl/logout";
+const String currentUserRoute = "$backendUrl/users/current";
+const String refreshTokenRoute = "$backendUrl/refresh/token";
