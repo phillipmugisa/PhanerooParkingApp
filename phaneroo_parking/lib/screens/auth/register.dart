@@ -67,7 +67,7 @@ class RegisterPageState extends State<RegisterPage> {
     }).catchError((err) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No Internet connection'),
+          content: Text('Connection Difficulty'),
         ),
       );
     });

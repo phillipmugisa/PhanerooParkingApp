@@ -65,7 +65,7 @@ class _LoginPageState extends State<LoginPage> {
     }).catchError((err) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No Internet connection'),
+          content: Text('Connection Difficulty'),
         ),
       );
     });
@@ -122,6 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                 maxLines: 1,
                 decoration: InputDecoration(
                   border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.badge),
                   label: Text(
                     "Code Name",
                     style: GoogleFonts.lato(
@@ -139,6 +140,7 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: true,
                 decoration: InputDecoration(
                   border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.password),
                   label: Text(
                     "Password",
                     style: GoogleFonts.lato(

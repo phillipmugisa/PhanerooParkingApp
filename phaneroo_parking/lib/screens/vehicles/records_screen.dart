@@ -27,7 +27,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
   @override
   void initState() {
     super.initState();
-    servicesData = getCurrentService();
+    servicesData = listServices();
     vehiclesData = getVehiclesList();
     parkingList = listParkings();
   }
@@ -73,93 +73,100 @@ class _RecordsScreenState extends State<RecordsScreen> {
               ),
             ),
             const SizedBox(height: 20.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                FutureBuilder(
-                  future: servicesData,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    } else if (snapshot.hasData) {
-                      var jsonData = json.decode(snapshot.data!.body);
-                      var services = jsonData["results"] as List;
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                // mainAxisAlignment: MainAxisAlignment.,
+                children: [
+                  FutureBuilder(
+                    future: servicesData,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Text('Error: ${snapshot.error}');
+                      } else if (snapshot.hasData) {
+                        var jsonData = json.decode(snapshot.data!.body);
+                        var services = jsonData["results"] as List;
 
-                      return DropdownMenu(
-                        initialSelection: services[0]["Name"],
-                        controller: servicesController,
-                        requestFocusOnTap: true,
-                        label: const Text('Service'),
-                        onSelected: (value) {
-                          setState(() {
-                            var service = services
-                                .where((p) => p["Name"] == value)
-                                .toList();
+                        return Expanded(
+                          child: DropdownMenu(
+                            initialSelection: services[0]["Name"],
+                            controller: servicesController,
+                            requestFocusOnTap: true,
+                            label: const Text('Service'),
+                            onSelected: (value) {
+                              setState(() {
+                                var service = services
+                                    .where((p) => p["Name"] == value)
+                                    .toList();
 
-                            setState(() {
-                              // serviceValue = name.toString();
-                              vehiclesData =
-                                  getServiceVehicles(service[0]["ID"]);
-                            });
-                          });
-                        },
-                        dropdownMenuEntries: services
-                            .map((v) => DropdownMenuEntry(
-                                  value: v["Name"],
-                                  label: v["Name"],
-                                ))
-                            .toList(),
-                      );
-                    } else {
-                      return const Text('Try Again');
-                    }
-                  },
-                ),
-                const SizedBox(width: 10),
-                FutureBuilder(
-                  future: parkingList,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    } else if (snapshot.hasData) {
-                      var jsonData = json.decode(snapshot.data!.body);
-                      var parkings = jsonData["results"] as List;
+                                setState(() {
+                                  // serviceValue = name.toString();
+                                  vehiclesData =
+                                      getServiceVehicles(service[0]["ID"]);
+                                });
+                              });
+                            },
+                            dropdownMenuEntries: services
+                                .map((v) => DropdownMenuEntry(
+                                      value: v["Name"],
+                                      label: v["Name"],
+                                    ))
+                                .toList(),
+                          ),
+                        );
+                      } else {
+                        return const Text('Try Again');
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  FutureBuilder(
+                    future: parkingList,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Text('Error: ${snapshot.error}');
+                      } else if (snapshot.hasData) {
+                        var jsonData = json.decode(snapshot.data!.body);
+                        var parkings = jsonData["results"] as List;
 
-                      return DropdownMenu(
-                        initialSelection: parkings[0]["Codename"],
-                        controller: parkingController,
-                        requestFocusOnTap: true,
-                        label: const Text('Parking'),
-                        onSelected: (value) {
-                          setState(() {
-                            var parking = parkings
-                                .where((p) => p["Codename"] == value)
-                                .toList();
+                        return Expanded(
+                          child: DropdownMenu(
+                            initialSelection: parkings[0]["Codename"],
+                            controller: parkingController,
+                            requestFocusOnTap: true,
+                            label: const Text('Parking'),
+                            onSelected: (value) {
+                              setState(() {
+                                var parking = parkings
+                                    .where((p) => p["Codename"] == value)
+                                    .toList();
 
-                            setState(() {
-                              // serviceValue = name.toString();
-                              vehiclesData =
-                                  getParkingVehicles(parking[0]["ID"]);
-                            });
-                          });
-                        },
-                        dropdownMenuEntries: parkings
-                            .map((v) => DropdownMenuEntry(
-                                  value: v["Codename"],
-                                  label: v["Codename"],
-                                ))
-                            .toList(),
-                      );
-                    } else {
-                      return const Text('Try Again');
-                    }
-                  },
-                )
-              ],
+                                setState(() {
+                                  // serviceValue = name.toString();
+                                  vehiclesData =
+                                      getParkingVehicles(parking[0]["ID"]);
+                                });
+                              });
+                            },
+                            dropdownMenuEntries: parkings
+                                .map((v) => DropdownMenuEntry(
+                                      value: v["Codename"],
+                                      label: v["Codename"],
+                                    ))
+                                .toList(),
+                          ),
+                        );
+                      } else {
+                        return const Text('Try Again');
+                      }
+                    },
+                  )
+                ],
+              ),
             ),
             VehicleList(vehiclesData: vehiclesData),
           ],
@@ -172,7 +179,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
         // ),
         bottomNavigationBar: NavigationBar(
           backgroundColor: Colors.white,
-          indicatorColor: Colors.grey.shade300,
+          indicatorColor: const Color.fromARGB(197, 203, 237, 250),
           shadowColor: Colors.black87,
           selectedIndex: currentScreenIndex,
           onDestinationSelected: (int index) {
@@ -262,10 +269,30 @@ class VehicleList extends StatelessWidget {
                   (vehicle) => DataRow(
                     cells: [
                       DataCell(
-                        Text(vehicle["LicenseNumber"]),
+                        GestureDetector(
+                          onTap: () {
+                            Map<String, dynamic> data = {
+                              'licenseNo': vehicle["LicenseNumber"],
+                              "id": vehicle["ID"]
+                            };
+                            Navigator.pushNamed(context, "/driver_details",
+                                arguments: data);
+                          },
+                          child: Text(vehicle["LicenseNumber"]),
+                        ),
                       ),
                       DataCell(
-                        Text(vehicle["Fullname"]),
+                        GestureDetector(
+                          onTap: () {
+                            Map<String, dynamic> data = {
+                              'licenseNo': vehicle["LicenseNumber"],
+                              "id": vehicle["ID"]
+                            };
+                            Navigator.pushNamed(context, "/driver_details",
+                                arguments: data);
+                          },
+                          child: Text(vehicle["Fullname"]),
+                        ),
                       ),
                       vehicle["IsCheckedOut"]["Bool"] == true
                           ? const DataCell(
@@ -287,16 +314,16 @@ class VehicleList extends StatelessWidget {
                               ),
                             ),
                     ],
-                    onSelectChanged: (isSelected) {
-                      if (isSelected != null && isSelected) {
-                        Map<String, dynamic> data = {
-                          'licenseNo': vehicle["LicenseNumber"],
-                          "id": vehicle["ID"]
-                        };
-                        Navigator.pushNamed(context, "/driver_details",
-                            arguments: data);
-                      }
-                    },
+                    // onSelectChanged: (isSelected) {
+                    //   if (isSelected != null && isSelected) {
+                    //     Map<String, dynamic> data = {
+                    //       'licenseNo': vehicle["LicenseNumber"],
+                    //       "id": vehicle["ID"]
+                    //     };
+                    //     Navigator.pushNamed(context, "/driver_details",
+                    //         arguments: data);
+                    //   }
+                    // },
                   ),
                 )
                 .toList();

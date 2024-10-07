@@ -76,7 +76,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
       }).catchError((err) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No Internet connection'),
+            content: Text('Connection Difficulty'),
           ),
         );
       });
@@ -116,7 +116,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
       }).catchError((err) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No Internet connection'),
+            content: Text('Connection Difficulty'),
           ),
         );
       });
@@ -157,7 +157,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
     }).catchError((err) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No Internet connection'),
+          content: Text('Connection Difficulty'),
         ),
       );
     });
@@ -193,11 +193,11 @@ class _DetailsScreenState extends State<DetailsScreen> {
           driverTelNoController.text = jsonData["PhoneNumber"];
           driverEmailController.text = jsonData["Email"];
         }).catchError((err) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No Internet connection'),
-            ),
-          );
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   const SnackBar(
+          //     content: Text('Connection Difficulty'),
+          //   ),
+          // );
         });
       }
 
@@ -410,26 +410,27 @@ class _DetailsScreenState extends State<DetailsScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              ConstrainedBox(
-                                constraints:
-                                    const BoxConstraints(minHeight: 50.0),
-                                child: ElevatedButton(
-                                  onPressed: () => contactDriver(),
-                                  style: ButtonStyle(
-                                    backgroundColor:
-                                        MaterialStateProperty.all<Color>(
-                                            Colors.black54),
-                                  ),
-                                  child: const Text(
-                                    "Contact",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10.0),
-                              data["id"] != null
+                              // ConstrainedBox(
+                              //   constraints:
+                              //       const BoxConstraints(minHeight: 50.0),
+                              //   child: ElevatedButton(
+                              //     onPressed: () => contactDriver(),
+                              //     style: ButtonStyle(
+                              //       backgroundColor:
+                              //           WidgetStateProperty.all<Color>(
+                              //               Colors.black54),
+                              //     ),
+                              //     child: const Text(
+                              //       "Contact",
+                              //       style: TextStyle(
+                              //         color: Colors.white,
+                              //       ),
+                              //     ),
+                              //   ),
+                              // ),
+                              // const SizedBox(width: 10.0),
+                              data["id"] != null &&
+                                      data["is_checked_out"] == false
                                   ? ConstrainedBox(
                                       constraints:
                                           const BoxConstraints(minHeight: 50.0),
@@ -438,7 +439,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                                             checkoutVehicle(data["id"]),
                                         style: ButtonStyle(
                                           backgroundColor:
-                                              MaterialStateProperty.all<Color>(
+                                              WidgetStateProperty.all<Color>(
                                                   Colors.black54),
                                         ),
                                         child: const Text(
@@ -464,7 +465,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                                   },
                                   style: ButtonStyle(
                                     backgroundColor:
-                                        MaterialStateProperty.all<Color>(
+                                        WidgetStateProperty.all<Color>(
                                             Colors.green),
                                   ),
                                   child: const Text(
@@ -480,7 +481,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 80.0),
+                    const SizedBox(height: 20.0),
                   ],
                 ),
               ),
@@ -491,8 +492,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
         //   ),
         // ),
         bottomNavigationBar: NavigationBar(
-          backgroundColor: Colors.black,
-          indicatorColor: Colors.grey.shade300,
+          backgroundColor: Colors.white,
+          indicatorColor: const Color.fromARGB(197, 203, 237, 250),
           shadowColor: Colors.black87,
           selectedIndex: currentScreenIndex,
           onDestinationSelected: (int index) {

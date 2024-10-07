@@ -14,6 +14,10 @@ const String listParkingStationsRoute = "$backendUrl/parkingstations";
 // const String getParkingStationsRoute = "$backendUrl/parkingstations/details";
 // const String createParkingStationsRoute =
 //     "$backendUrl/parkingstations/register";
+const String currentService = "$backendUrl/services/current";
+const String parkingGroups = "$backendUrl/parkingstations/groups";
+const String parkingServiceGroups =
+    "$backendUrl/parkingstations/groups/service";
 
 const String searchRoute = "$backendUrl/vehicles/search?q=";
 

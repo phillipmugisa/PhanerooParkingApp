@@ -49,12 +49,12 @@ class _AccountScreenState extends State<AccountScreen> {
             return SafeArea(
               child: Scaffold(
                 backgroundColor: Colors.white,
-                body: ListView(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0, vertical: 10.0),
-                      child: Card(
+                body: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0, vertical: 10.0),
+                  child: ListView(
+                    children: [
+                      Card(
                         surfaceTintColor: Colors.white,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -97,7 +97,7 @@ class _AccountScreenState extends State<AccountScreen> {
                                     jsonData["Fullname"],
                                     style: GoogleFonts.lato(
                                       textStyle: const TextStyle(
-                                        fontSize: 16.0,
+                                        fontSize: 18.0,
                                         fontWeight: FontWeight.normal,
                                         color: Colors.black54,
                                       ),
@@ -108,75 +108,117 @@ class _AccountScreenState extends State<AccountScreen> {
                                     jsonData["Name"],
                                     style: GoogleFonts.lato(
                                       textStyle: const TextStyle(
-                                        fontSize: 16.0,
+                                        fontSize: 18.0,
                                         fontWeight: FontWeight.normal,
                                         color: Colors.black54,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 20.0),
-                                  SizedBox(
-                                    height: 50.0,
-                                    width: 200.0,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        logoutRequest().then((response) {
-                                          if (response.statusCode >= 400) {
-                                            // not successful
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                    'Operation now successful'),
-                                              ),
-                                            );
-                                            return;
-                                          }
-                                          SharedPreferences.getInstance()
-                                              .then((prefs) {
-                                            prefs.remove("access_token");
-                                            prefs.remove("refresh_token");
-                                          });
-
-                                          Navigator.popAndPushNamed(
-                                              context, "/login");
-                                        }).catchError(
-                                          (err) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                    'No Internet connection'),
-                                              ),
-                                            );
-                                          },
-                                        );
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
-                                        shape: const StadiumBorder(),
-                                        side: BorderSide.none,
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      Row(
+                        children: [
+                          jsonData["IsTeamLeader"]["Bool"] == true ||
+                                  jsonData["IsAdmin"]["Bool"] == true
+                              ? Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.pushNamed(
+                                          context, "/leaderboard");
+                                    },
+                                    child: ListTile(
+                                      tileColor: Colors.amberAccent,
+                                      leading: Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(100),
+                                          color: Colors.white,
+                                        ),
+                                        child: const Icon(
+                                          Icons.settings,
+                                          color: Colors.black45,
+                                        ),
                                       ),
-                                      child: Text(
-                                        "Logout",
+                                      title: Text(
+                                        "Leader Board",
                                         style: GoogleFonts.lato(
                                           textStyle: const TextStyle(
                                             fontSize: 16.0,
                                             fontWeight: FontWeight.normal,
-                                            color: Colors.white,
+                                            color: Colors.black87,
                                           ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ],
-                              )
-                            ],
+                                )
+                              : Container(),
+                          Expanded(
+                            child: ListTile(
+                              tileColor: Colors.blue.shade200,
+                              leading: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(100),
+                                  color: Colors.blue.shade100.withOpacity(0.1),
+                                ),
+                                child: const Icon(
+                                  Icons.logout,
+                                  color: Colors.black45,
+                                ),
+                              ),
+                              title: Text(
+                                "Logout",
+                                style: GoogleFonts.lato(
+                                  textStyle: const TextStyle(
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.normal,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              onTap: () {
+                                logoutRequest().then((response) {
+                                  if (response.statusCode >= 400) {
+                                    // not successful
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content:
+                                            Text('Operation now successful'),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  SharedPreferences.getInstance().then((prefs) {
+                                    prefs.remove("access_token");
+                                    prefs.remove("refresh_token");
+                                  });
+
+                                  Navigator.popAndPushNamed(context, "/login");
+                                }).catchError(
+                                  (err) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('No Internet connection'),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 // floatingActionButton: FloatingActionButton(
                 //   onPressed: () {},
@@ -186,7 +228,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 // ),
                 bottomNavigationBar: NavigationBar(
                   backgroundColor: Colors.white,
-                  indicatorColor: Colors.grey.shade300,
+                  indicatorColor: const Color.fromARGB(197, 203, 237, 250),
                   shadowColor: Colors.black87,
                   selectedIndex: currentScreenIndex,
                   onDestinationSelected: (int index) {

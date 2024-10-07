@@ -4,11 +4,25 @@ import 'package:phaneroo_parking/constants.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<http.Response> getCurrentService() async {
+Future<http.Response> listServices() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   String? accessToken = prefs.get("access_token").toString();
 
   var url = Uri.parse("$backendUrl/services");
+  return await http.get(
+    url,
+    headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+      'Authorization': 'JWT $accessToken',
+    },
+  );
+}
+
+Future<http.Response> getCurrentService() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? accessToken = prefs.get("access_token").toString();
+
+  var url = Uri.parse("$backendUrl/services/current");
   return await http.get(
     url,
     headers: <String, String>{
@@ -143,6 +157,20 @@ Future<http.Response> listParkings() async {
   );
 }
 
+Future<http.Response> currentServiceParkingStatsRequest(int service_id) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? accessToken = prefs.get("access_token").toString();
+
+  var url = Uri.parse("$parkingServiceGroups/$service_id");
+  return await http.get(
+    url,
+    headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+      'Authorization': 'JWT $accessToken',
+    },
+  );
+}
+
 Future<http.Response> searchVehicles(String keyword) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   String? accessToken = prefs.get("access_token").toString();
@@ -212,6 +240,19 @@ Future<http.Response> getCurrentUserRequest() async {
 
   return await http.get(
     Uri.parse(currentUserRoute),
+    headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+      'Authorization': 'JWT $accessToken',
+    },
+  );
+}
+
+Future<http.Response> listDepartmentTeamRequest(int id) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? accessToken = prefs.get("access_token").toString();
+
+  return await http.get(
+    Uri.parse("$backendUrl/departments/$id/team"),
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
       'Authorization': 'JWT $accessToken',

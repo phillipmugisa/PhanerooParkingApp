@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phaneroo_parking/requests.dart';
 import 'dart:convert';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,12 +11,23 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int? currentServiceID;
   late Future userData;
 
   @override
   void initState() {
     super.initState();
     userData = getCurrentUserRequest();
+    getCurrentService().then((response) {
+      var jsonData = json.decode(response.body);
+      currentServiceID = jsonData["ID"];
+    }).catchError((val) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Connection Difficulty'),
+        ),
+      );
+    });
   }
 
   @override
@@ -53,9 +65,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     // current user information
                     PersonnalDetails(userData: jsonData),
                     const SizedBox(height: 10.0),
-                    const ParkingStats(),
+                    ParkingStats(
+                      currentServiceID: currentServiceID,
+                    ),
                     const SizedBox(height: 10.0),
-                    const TeamList(),
+                    TeamList(userData: jsonData, serviceID: currentServiceID),
                     const SizedBox(height: 80.0),
                   ],
                 );
@@ -69,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
             }),
         bottomNavigationBar: NavigationBar(
           backgroundColor: Colors.white,
-          indicatorColor: Colors.grey.shade300,
+          indicatorColor: const Color.fromARGB(197, 203, 237, 250),
           shadowColor: Colors.black87,
           selectedIndex: currentScreenIndex,
           onDestinationSelected: (int index) {
@@ -120,15 +134,28 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class TeamList extends StatelessWidget {
-  const TeamList({
-    super.key,
-  });
+class TeamList extends StatefulWidget {
+  final Map<String, dynamic> userData;
+  final int? serviceID;
+  const TeamList({super.key, required this.userData, required this.serviceID});
+
+  @override
+  State<TeamList> createState() => _TeamListState();
+}
+
+class _TeamListState extends State<TeamList> {
+  late Future departmentList;
+
+  @override
+  void initState() {
+    super.initState();
+    departmentList = listDepartmentTeamRequest(widget.userData["DepartmentID"]);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 2.5),
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -137,89 +164,104 @@ class TeamList extends StatelessWidget {
               vertical: 2.0,
               horizontal: 2.0,
             ),
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "On-site team",
+                Text(
+                  "Team Members",
                   textAlign: TextAlign.left,
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15.0,
                   ),
                 ),
-                TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    "View All",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12.0,
-                      color: Colors.black87,
-                    ),
-                  ),
-                )
+                // TextButton(
+                //   onPressed: () {},
+                //   child: const Text(
+                //     "View All",
+                //     style: TextStyle(
+                //       fontWeight: FontWeight.w500,
+                //       fontSize: 12.0,
+                //       color: Colors.black87,
+                //     ),
+                //   ),
+                // )
               ],
             ),
           ),
           const SizedBox(height: 5.0),
-          DataTable(
-            border: TableBorder.all(color: Colors.grey.shade200),
-            columns: const [
-              DataColumn(label: Text("Code Name")),
-              DataColumn(label: Text("Allocation")),
-              DataColumn(label: Text("chat")),
-            ],
-            rows: [
-              DataRow(cells: [
-                const DataCell(Text("BMW")),
-                const DataCell(Text("Truck")),
-                DataCell(TextButton(
-                  onPressed: () {},
-                  child: const Icon(Icons.message),
-                )),
-              ]),
-              DataRow(cells: [
-                const DataCell(Text("Kia")),
-                const DataCell(Text("Truck")),
-                DataCell(TextButton(
-                  onPressed: () {},
-                  child: const Icon(Icons.message),
-                )),
-              ]),
-              DataRow(cells: [
-                const DataCell(Text("Genesis")),
-                const DataCell(Text("Truck")),
-                DataCell(TextButton(
-                  onPressed: () {},
-                  child: const Icon(Icons.message),
-                )),
-              ]),
-              DataRow(cells: [
-                const DataCell(Text("Vision")),
-                const DataCell(Text("Lakeside")),
-                DataCell(TextButton(
-                  onPressed: () {},
-                  child: const Icon(Icons.message),
-                )),
-              ]),
-            ],
-          ),
+          FutureBuilder(
+              future: departmentList,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  Future.delayed(Duration.zero, () {
+                    Navigator.pushNamed(context, '/login');
+                  });
+                  // Return an empty container while redirecting
+                  return Container();
+                } else if (snapshot.hasData) {
+                  var jsonData = json.decode(snapshot.data!.body);
+                  var groups = jsonData["results"] as List;
+
+                  List<DataRow> team = groups
+                      .map((g) => DataRow(cells: [
+                            DataCell(Text(g["Codename"])),
+                            DataCell(Text(g["Fullname"])),
+                            // get allocation
+                            DataCell(TextButton(
+                              onPressed: () {},
+                              child: const Icon(Icons.person),
+                            )),
+                          ]))
+                      .toList();
+
+                  return DataTable(
+                    border: TableBorder.all(color: Colors.grey.shade200),
+                    columns: const [
+                      DataColumn(label: Text("Code Name")),
+                      DataColumn(label: Text("Allocation")),
+                      DataColumn(label: Text("Details")),
+                    ],
+                    rows: team,
+                  );
+                } else {
+                  Future.delayed(Duration.zero, () {
+                    Navigator.pushNamed(context, '/login');
+                  });
+                  // Return an empty container while redirecting
+                  return Container();
+                }
+              }),
         ],
       ),
     );
   }
 }
 
-class ParkingStats extends StatelessWidget {
-  const ParkingStats({
-    super.key,
-  });
+class ParkingStats extends StatefulWidget {
+  final int? currentServiceID;
+  const ParkingStats({super.key, required this.currentServiceID});
+
+  @override
+  State<ParkingStats> createState() => _ParkingStatsState();
+}
+
+class _ParkingStatsState extends State<ParkingStats> {
+  late Future currentServiceParkingStats;
+
+  @override
+  void initState() {
+    super.initState();
+    currentServiceParkingStats =
+        currentServiceParkingStatsRequest(widget.currentServiceID!);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 2.5),
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -228,10 +270,10 @@ class ParkingStats extends StatelessWidget {
               vertical: 2.0,
               horizontal: 2.0,
             ),
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   "Parking Statistics",
                   textAlign: TextAlign.left,
                   style: TextStyle(
@@ -239,45 +281,62 @@ class ParkingStats extends StatelessWidget {
                     fontSize: 15.0,
                   ),
                 ),
-                TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    "View All",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12.0,
-                      color: Colors.black87,
-                    ),
-                  ),
-                )
+                // TextButton(
+                //   onPressed: () {},
+                //   child: const Text(
+                //     "View All",
+                //     style: TextStyle(
+                //       fontWeight: FontWeight.w500,
+                //       fontSize: 12.0,
+                //       color: Colors.black87,
+                //     ),
+                //   ),
+                // )
               ],
             ),
           ),
           const SizedBox(height: 5.0),
-          DataTable(
-              border: TableBorder.all(color: Colors.grey.shade300),
-              columns: const [
-                DataColumn(label: Text("Parking")),
-                DataColumn(label: Text("Count")),
-                DataColumn(label: Text("Date")),
-              ],
-              rows: const [
-                DataRow(cells: [
-                  DataCell(Text("Truck")),
-                  DataCell(Text("200")),
-                  DataCell(Text("01/03/2024")),
-                ]),
-                DataRow(cells: [
-                  DataCell(Text("Lakeside")),
-                  DataCell(Text("300")),
-                  DataCell(Text("01/03/2024")),
-                ]),
-                DataRow(cells: [
-                  DataCell(Text("Heaven")),
-                  DataCell(Text("500")),
-                  DataCell(Text("01/03/2024")),
-                ]),
-              ])
+          FutureBuilder(
+            future: currentServiceParkingStats,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                Future.delayed(Duration.zero, () {
+                  Navigator.pushNamed(context, '/login');
+                });
+                // Return an empty container while redirecting
+                return Container();
+              } else if (snapshot.hasData) {
+                var jsonData = json.decode(snapshot.data!.body);
+                var groups = jsonData["results"] as List;
+
+                List<DataRow> groupings = groups
+                    .map((g) => DataRow(cells: [
+                          DataCell(Text(g["Codename"])),
+                          DataCell(Text(g["Name"])),
+                          DataCell(Text(g["Count"].toString())),
+                        ]))
+                    .toList();
+
+                return DataTable(
+                  border: TableBorder.all(color: Colors.grey.shade300),
+                  columns: const [
+                    DataColumn(label: Text("Parking")),
+                    DataColumn(label: Text("Name")),
+                    DataColumn(label: Text("Count")),
+                  ],
+                  rows: groupings,
+                );
+              } else {
+                Future.delayed(Duration.zero, () {
+                  Navigator.pushNamed(context, '/login');
+                });
+                // Return an empty container while redirecting
+                return Container();
+              }
+            },
+          ),
         ],
       ),
     );
@@ -291,94 +350,64 @@ class PersonnalDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(5.9),
-      child: Wrap(
-        direction: Axis.horizontal,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              vertical: 2.0,
-              horizontal: 2.0,
-            ),
-            child: const Text(
-              "Personal Information",
-              textAlign: TextAlign.left,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 15.0,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Card(
+          color: const Color.fromARGB(197, 203, 237, 250),
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hello ${userData["Codename"]}',
+                  style: GoogleFonts.lato(
+                    textStyle: const TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2.5),
+                Text(
+                  'Welcome to Phaneroo 700',
+                  style: GoogleFonts.lato(
+                    textStyle: const TextStyle(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2.5),
+                Row(
+                  children: [
+                    Text(
+                      "Deployed at ",
+                      style: GoogleFonts.lato(
+                        textStyle: const TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      "Upper parking",
+                      style: GoogleFonts.lato(
+                        textStyle: const TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 20.0),
-          Column(
-            children: [
-              Row(
-                children: [
-                  const Text(
-                    "Code Name: ",
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 5.0),
-                  Text(
-                    userData["Codename"],
-                    style: const TextStyle(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.normal,
-                      color: Color.fromARGB(255, 8, 8, 8),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 5.0),
-              Row(
-                children: [
-                  const Text(
-                    "Department: ",
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 5.0),
-                  Text(
-                    userData["Name"],
-                    style: const TextStyle(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.normal,
-                      color: Color.fromARGB(255, 8, 8, 8),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 5.0),
-              Row(
-                children: [
-                  const Text(
-                    "Allocation: ",
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 2.5),
-                  Text(
-                    userData["Name"],
-                    style: const TextStyle(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.normal,
-                      color: Color.fromARGB(255, 8, 8, 8),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -398,15 +427,14 @@ class TopPageActions extends StatelessWidget {
           icon: const Icon(Icons.mic),
           color: Colors.white,
           style: ButtonStyle(
-              backgroundColor:
-                  MaterialStateProperty.all<Color>(Colors.black54)),
+              backgroundColor: WidgetStateProperty.all<Color>(Colors.black54)),
         ),
         IconButton(
           onPressed: () {},
           icon: const Icon(Icons.record_voice_over),
           color: Colors.white,
           style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all<Color>(Colors.black)),
+              backgroundColor: WidgetStateProperty.all<Color>(Colors.black)),
           constraints: const BoxConstraints(
             minHeight: 100.0,
             minWidth: 100.0,
@@ -419,8 +447,7 @@ class TopPageActions extends StatelessWidget {
           icon: const Icon(Icons.volume_up_sharp),
           color: Colors.white,
           style: ButtonStyle(
-              backgroundColor:
-                  MaterialStateProperty.all<Color>(Colors.black54)),
+              backgroundColor: WidgetStateProperty.all<Color>(Colors.black54)),
         ),
       ],
     );

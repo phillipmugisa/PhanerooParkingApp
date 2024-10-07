@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:phaneroo_parking/screens/admin/leaderboard.dart';
+import 'package:phaneroo_parking/screens/admin/service_screen.dart';
 import 'package:phaneroo_parking/screens/auth/register.dart';
 import 'package:phaneroo_parking/screens/home_screen.dart';
 import 'package:phaneroo_parking/screens/vehicles/details_screen.dart';
@@ -27,6 +29,8 @@ class MyApp extends StatelessWidget {
         "/account": (context) => const AccountScreen(),
         "/login": (context) => const LoginPage(),
         "/register": (context) => const RegisterPage(),
+        "/leaderboard": (context) => const LeaderBoard(),
+        "/service": (context) => const ServiceScreen(),
       },
       debugShowCheckedModeBanner: false,
     );

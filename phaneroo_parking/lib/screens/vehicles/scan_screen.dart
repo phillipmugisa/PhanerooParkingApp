@@ -113,7 +113,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
     }).catchError((err) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No Internet connection'),
+          content: Text('Connection Difficulty'),
         ),
       );
     });
@@ -179,7 +179,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
     }).catchError((err) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No Internet connection'),
+          content: Text('Connection Difficulty'),
         ),
       );
     });
@@ -189,7 +189,18 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
   void initState() {
     super.initState();
     parkingList = listParkings();
-    servicesData = getCurrentService();
+    servicesData = listServices();
+
+    getCurrentService().then((response) {
+      var jsonData = json.decode(response.body);
+      currentServiceId = jsonData["ID"];
+    }).catchError((val) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Connection Difficulty'),
+        ),
+      );
+    });
   }
 
   @override
@@ -203,7 +214,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
             CameraView(populateFields: populateFields),
             const SizedBox(height: 20.0),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 FutureBuilder(
                   future: servicesData,
@@ -217,7 +228,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                       var services = jsonData["results"] as List;
 
                       return DropdownMenu(
-                        initialSelection: services[0]["Name"],
+                        initialSelection: currentServiceId,
                         controller: servicesController,
                         requestFocusOnTap: true,
                         label: const Text('Service'),
@@ -352,7 +363,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                   //   color: Colors.white,
                   //   style: ButtonStyle(
                   //       backgroundColor:
-                  //           MaterialStateProperty.all<Color>(Colors.black)),
+                  //           WidgetStateProperty.all<Color>(Colors.black)),
                   //   constraints: const BoxConstraints(
                   //     minHeight: 50.0,
                   //     minWidth: 50.0,
@@ -365,8 +376,9 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                             onPressed: () {
                               licenseNo = licenseNoController.text;
 
-                              if (licenseNo.length < licenseNoLength - 1 ||
-                                  !pattern.hasMatch(licenseNo)) {
+                              if (licenseNo.length < 5) {
+                                // if (licenseNo.length < licenseNoLength - 1 ||
+                                //     !pattern.hasMatch(licenseNo)) {
                                 showDialog<String>(
                                   context: context,
                                   builder: (BuildContext context) =>
@@ -391,7 +403,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                               return;
                             },
                             style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(
+                              backgroundColor: WidgetStateProperty.all<Color>(
                                   Colors.black87),
                             ),
                             child: const Row(
@@ -416,9 +428,8 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                           child: ElevatedButton(
                               onPressed: () => checkoutVehicle(),
                               style: ButtonStyle(
-                                backgroundColor:
-                                    MaterialStateProperty.all<Color>(
-                                        const Color.fromARGB(255, 3, 206, 108)),
+                                backgroundColor: WidgetStateProperty.all<Color>(
+                                    const Color.fromARGB(255, 3, 206, 108)),
                               ),
                               child: const Row(
                                 children: [
@@ -450,7 +461,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
         // ),
         bottomNavigationBar: NavigationBar(
           backgroundColor: Colors.white,
-          indicatorColor: Colors.grey.shade300,
+          indicatorColor: const Color.fromARGB(197, 203, 237, 250),
           shadowColor: Colors.black87,
           selectedIndex: currentScreenIndex,
           onDestinationSelected: (int index) {
@@ -595,7 +606,7 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
                       icon: const Icon(Icons.camera_alt_rounded),
                       color: Colors.white,
                       style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all<Color>(
+                          backgroundColor: WidgetStateProperty.all<Color>(
                               Colors.blueAccent)),
                       constraints: const BoxConstraints(
                         minHeight: 50.0,
@@ -617,7 +628,7 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
                         return;
                       },
                       style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all<Color>(
+                          backgroundColor: WidgetStateProperty.all<Color>(
                               Colors.greenAccent)),
                       child: const Row(
                         children: [
