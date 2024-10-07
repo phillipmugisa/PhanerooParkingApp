@@ -53,6 +53,10 @@ VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
 -- name: ListTeamMember :many
 SELECT id, fullname, codename, phone_number, email, is_team_leader, is_admin, department_id FROM team_member ORDER BY ID DESC;
 
+-- name: ListTeamMemberByDepartment :many
+SELECT id, fullname, codename, phone_number, email, is_team_leader, is_admin, department_id
+FROM team_member WHERE department_id = $1 ORDER BY ID DESC;
+
 -- name: GetTeamMemberByID :one
 SELECT team_member.id, fullname, team_member.codename, phone_number, email, is_team_leader, is_admin, department_id, department.codename, department.name
 FROM team_member
@@ -72,3 +76,6 @@ VALUES($1, $2, $3, $4, $5);
 
 -- name: ListAllocation :many
 SELECT * FROM allocation ORDER BY ID DESC;
+
+-- name: GetMemberAllocation :one
+SELECT * FROM allocation WHERE team_member_id = $1 AND service_id = $2;

@@ -193,6 +193,29 @@ func (q *Queries) GetDepartmentByCode(ctx context.Context, codename string) (Dep
 	return i, err
 }
 
+const getMemberAllocation = `-- name: GetMemberAllocation :one
+SELECT id, team_member_id, parking_id, service_id, created_at, updated_at FROM allocation WHERE team_member_id = $1 AND service_id = $2
+`
+
+type GetMemberAllocationParams struct {
+	TeamMemberID int32
+	ServiceID    int32
+}
+
+func (q *Queries) GetMemberAllocation(ctx context.Context, arg GetMemberAllocationParams) (Allocation, error) {
+	row := q.db.QueryRowContext(ctx, getMemberAllocation, arg.TeamMemberID, arg.ServiceID)
+	var i Allocation
+	err := row.Scan(
+		&i.ID,
+		&i.TeamMemberID,
+		&i.ParkingID,
+		&i.ServiceID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getParkingSession = `-- name: GetParkingSession :one
 SELECT id, station_id, service_id, report, created_at, updated_at FROM parkingsession WHERE id = $1
 `
@@ -519,6 +542,54 @@ func (q *Queries) ListTeamMember(ctx context.Context) ([]ListTeamMemberRow, erro
 	var items []ListTeamMemberRow
 	for rows.Next() {
 		var i ListTeamMemberRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Fullname,
+			&i.Codename,
+			&i.PhoneNumber,
+			&i.Email,
+			&i.IsTeamLeader,
+			&i.IsAdmin,
+			&i.DepartmentID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTeamMemberByDepartment = `-- name: ListTeamMemberByDepartment :many
+SELECT id, fullname, codename, phone_number, email, is_team_leader, is_admin, department_id
+FROM team_member WHERE department_id = $1 ORDER BY ID DESC
+`
+
+type ListTeamMemberByDepartmentRow struct {
+	ID           int32
+	Fullname     string
+	Codename     string
+	PhoneNumber  string
+	Email        sql.NullString
+	IsTeamLeader sql.NullBool
+	IsAdmin      sql.NullBool
+	DepartmentID int32
+}
+
+func (q *Queries) ListTeamMemberByDepartment(ctx context.Context, departmentID int32) ([]ListTeamMemberByDepartmentRow, error) {
+	rows, err := q.db.QueryContext(ctx, listTeamMemberByDepartment, departmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTeamMemberByDepartmentRow
+	for rows.Next() {
+		var i ListTeamMemberByDepartmentRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Fullname,

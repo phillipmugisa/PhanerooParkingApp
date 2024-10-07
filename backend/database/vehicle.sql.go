@@ -513,6 +513,81 @@ func (q *Queries) GetVehiclesExisting(ctx context.Context, arg GetVehiclesExisti
 	return items, nil
 }
 
+const groupVehiclesByParking = `-- name: GroupVehiclesByParking :many
+SELECT COUNT(vehicle.ID), parkingstation.name, parkingstation.codename
+FROM vehicle 
+JOIN driver ON vehicle.driver_id = driver.id 
+JOIN parkingstation ON vehicle.parking_id = parkingstation.id 
+GROUP BY(parkingstation.id)
+`
+
+type GroupVehiclesByParkingRow struct {
+	Count    int64
+	Name     string
+	Codename string
+}
+
+func (q *Queries) GroupVehiclesByParking(ctx context.Context) ([]GroupVehiclesByParkingRow, error) {
+	rows, err := q.db.QueryContext(ctx, groupVehiclesByParking)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GroupVehiclesByParkingRow
+	for rows.Next() {
+		var i GroupVehiclesByParkingRow
+		if err := rows.Scan(&i.Count, &i.Name, &i.Codename); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const groupVehiclesByParkingAndService = `-- name: GroupVehiclesByParkingAndService :many
+SELECT COUNT(vehicle.ID), parkingstation.name, parkingstation.codename
+FROM vehicle
+JOIN driver ON vehicle.driver_id = driver.id
+JOIN parkingstation ON vehicle.parking_id = parkingstation.id
+WHERE vehicle.service_id = $1
+GROUP BY parkingstation.id
+`
+
+type GroupVehiclesByParkingAndServiceRow struct {
+	Count    int64
+	Name     string
+	Codename string
+}
+
+func (q *Queries) GroupVehiclesByParkingAndService(ctx context.Context, serviceID int32) ([]GroupVehiclesByParkingAndServiceRow, error) {
+	rows, err := q.db.QueryContext(ctx, groupVehiclesByParkingAndService, serviceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GroupVehiclesByParkingAndServiceRow
+	for rows.Next() {
+		var i GroupVehiclesByParkingAndServiceRow
+		if err := rows.Scan(&i.Count, &i.Name, &i.Codename); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDriver = `-- name: ListDriver :many
 SELECT id, fullname, phone_number, email, created_at, updated_at FROM driver ORDER BY ID DESC
 `
@@ -615,7 +690,9 @@ func (q *Queries) ListVehicle(ctx context.Context) ([]ListVehicleRow, error) {
 }
 
 const searchVehicle = `-- name: SearchVehicle :many
-SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id WHERE vehicle.license_number LIKE '%'||$1||'%' OR driver.fullname LIKE '%'||$1||'%'  ORDER BY vehicle.created_at DESC
+SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id 
+WHERE vehicle.license_number LIKE '%'||$1||'%' OR driver.fullname LIKE '%'||$1||'%' 
+ORDER BY vehicle.created_at DESC
 `
 
 type SearchVehicleRow struct {

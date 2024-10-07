@@ -60,13 +60,19 @@ func (a *AppServer) registerRoutes(r *chi.Mux) {
 	r.Get("/parkingstations/details/{id}", a.AuthedHandler(a.GetParkingStationHandler))
 	r.Get("/parkingstations/{id}/vehicles", a.AuthedHandler(a.GetParkingStationVehiclesHandler))
 
+	r.Get("/parkingstations/groups", a.AuthedHandler(a.ListParkingSectionGroupsHandler))
+	r.Get("/parkingstations/groups/service/{id}", a.AuthedHandler(a.ListParkingSectionAndServiceGroupsHandler))
+
 	r.Get("/services", a.AuthedHandler(a.ListServicerHandler))
+	r.Get("/services/current", a.AuthedHandler(a.GetCurrentServicerHandler))
 	r.Post("/services/register", a.AuthedHandler(a.CreateServicerHandler))
 	r.Get("/services/details/{id}", a.AuthedHandler(a.GetServicerHandler))
 	r.Get("/service/{id}/vehicles", a.AuthedHandler(a.GetServiceVehicleHandler))
 
 	r.Get("/departments", a.AuthedHandler(a.ListDepartmentsHandler))
 	r.Get("/departments/{id}", a.AuthedHandler(a.GetDepartmentHandler))
+	r.Get("/departments/{id}/team", a.AuthedHandler(a.ListDepartmentTeamHandler))
+	r.Post("/departments/create", a.AuthedHandler(a.CreateDepartmentHandler))
 	r.Post("/departments/create", a.AuthedHandler(a.CreateDepartmentHandler))
 
 	// auth

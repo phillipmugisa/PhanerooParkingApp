@@ -26,6 +26,22 @@ func (a *AppServer) ListDepartmentsHandler(ctx context.Context, w http.ResponseW
 	})
 }
 
+func (a *AppServer) ListDepartmentTeamHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return NewApiError("Invalid data provided", http.StatusBadRequest)
+	}
+	results, err := a.db.ListTeamMemberByDepartment(ctx, int32(id))
+	if err != nil {
+		return NewApiError("Operation was unsuccessful", http.StatusInternalServerError)
+	}
+
+	return RespondWithJSON(w, http.StatusOK, HandlerResponse{
+		Count:   len(results),
+		Results: results,
+	})
+}
+
 func (a *AppServer) GetDepartmentHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
@@ -188,6 +204,28 @@ func (a *AppServer) GetParkingStationVehiclesHandler(ctx context.Context, w http
 	return RespondWithJSON(w, http.StatusCreated, HandlerResponse{Count: len(results), Results: results})
 }
 
+func (a *AppServer) ListParkingSectionGroupsHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+
+	groups, err := a.db.GroupVehiclesByParking(ctx)
+	if err != nil {
+		return NewApiError("Error fetching records", http.StatusInternalServerError)
+	}
+
+	return RespondWithJSON(w, http.StatusOK, groups)
+}
+func (a *AppServer) ListParkingSectionAndServiceGroupsHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+	service_id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return NewApiError("Invalid data provided", http.StatusBadRequest)
+	}
+	results, fetch_err := a.db.GroupVehiclesByParkingAndService(ctx, int32(service_id))
+	if fetch_err != nil {
+		return NewApiError("Error fetching records", http.StatusInternalServerError)
+	}
+
+	return RespondWithJSON(w, http.StatusOK, HandlerResponse{Count: len(results), Results: results})
+}
+
 func (a *AppServer) ListServicerHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
 	results, err := a.db.ListService(ctx)
 	if err != nil {
@@ -195,6 +233,18 @@ func (a *AppServer) ListServicerHandler(ctx context.Context, w http.ResponseWrit
 	}
 
 	return RespondWithJSON(w, http.StatusCreated, HandlerResponse{Count: len(results), Results: results})
+}
+
+func (a *AppServer) GetCurrentServicerHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+	results, err := a.db.ListService(ctx)
+	if err != nil {
+		return NewApiError("Error fetching record", http.StatusInternalServerError)
+	}
+
+	if len(results) < 1 {
+		return RespondWithJSON(w, http.StatusCreated, struct{}{})
+	}
+	return RespondWithJSON(w, http.StatusCreated, results[0])
 }
 
 func (a *AppServer) CreateServicerHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {

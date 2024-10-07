@@ -39,6 +39,22 @@ SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicl
 -- name: GetVehiclesByParking :many
 SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.parking_id = $1;
 
+
+-- name: GroupVehiclesByParking :many
+SELECT COUNT(vehicle.ID), parkingstation.name, parkingstation.codename
+FROM vehicle 
+JOIN driver ON vehicle.driver_id = driver.id 
+JOIN parkingstation ON vehicle.parking_id = parkingstation.id 
+GROUP BY(parkingstation.id);
+
+-- name: GroupVehiclesByParkingAndService :many
+SELECT COUNT(vehicle.ID), parkingstation.name, parkingstation.codename
+FROM vehicle
+JOIN driver ON vehicle.driver_id = driver.id
+JOIN parkingstation ON vehicle.parking_id = parkingstation.id
+WHERE vehicle.service_id = $1
+GROUP BY parkingstation.id;
+
 -- name: GetVehiclesByDriver :many
 SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.driver_id = $1;
 
@@ -62,4 +78,6 @@ WHERE id = $1;
 SELECT * FROM vehicle WHERE license_number = $1 AND created_at > $2 AND created_at < $3 AND service_id = $4;
 
 -- name: SearchVehicle :many
-SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id WHERE vehicle.license_number LIKE '%'||$1||'%' OR driver.fullname LIKE '%'||$1||'%'  ORDER BY vehicle.created_at DESC;
+SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id 
+WHERE vehicle.license_number LIKE '%'||$1||'%' OR driver.fullname LIKE '%'||$1||'%' 
+ORDER BY vehicle.created_at DESC;
