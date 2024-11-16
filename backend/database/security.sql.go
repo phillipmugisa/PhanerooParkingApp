@@ -157,6 +157,14 @@ func (q *Queries) CreateTeamMember(ctx context.Context, arg CreateTeamMemberPara
 	)
 }
 
+const deleteAllocation = `-- name: DeleteAllocation :execresult
+DELETE FROM allocation WHERE id = $1
+`
+
+func (q *Queries) DeleteAllocation(ctx context.Context, id int32) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteAllocation, id)
+}
+
 const getDepartment = `-- name: GetDepartment :one
 SELECT id, name, codename, created_at, updated_at, accesscode FROM department WHERE id = $1
 `
@@ -194,7 +202,7 @@ func (q *Queries) GetDepartmentByCode(ctx context.Context, codename string) (Dep
 }
 
 const getMemberAllocation = `-- name: GetMemberAllocation :one
-SELECT id, team_member_id, parking_id, service_id, created_at, updated_at FROM allocation WHERE team_member_id = $1 AND service_id = $2
+SELECT allocation.id, team_member_id, parking_id, service_id, allocation.created_at, allocation.updated_at, parkingstation.id, name, codename, parkingstation.created_at, parkingstation.updated_at FROM allocation JOIN parkingstation ON parking_id = parkingstation.id  WHERE team_member_id = $1 AND service_id = $2
 `
 
 type GetMemberAllocationParams struct {
@@ -202,9 +210,23 @@ type GetMemberAllocationParams struct {
 	ServiceID    int32
 }
 
-func (q *Queries) GetMemberAllocation(ctx context.Context, arg GetMemberAllocationParams) (Allocation, error) {
+type GetMemberAllocationRow struct {
+	ID           int32
+	TeamMemberID int32
+	ParkingID    int32
+	ServiceID    int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	ID_2         int32
+	Name         string
+	Codename     string
+	CreatedAt_2  time.Time
+	UpdatedAt_2  time.Time
+}
+
+func (q *Queries) GetMemberAllocation(ctx context.Context, arg GetMemberAllocationParams) (GetMemberAllocationRow, error) {
 	row := q.db.QueryRowContext(ctx, getMemberAllocation, arg.TeamMemberID, arg.ServiceID)
-	var i Allocation
+	var i GetMemberAllocationRow
 	err := row.Scan(
 		&i.ID,
 		&i.TeamMemberID,
@@ -212,6 +234,11 @@ func (q *Queries) GetMemberAllocation(ctx context.Context, arg GetMemberAllocati
 		&i.ServiceID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ID_2,
+		&i.Name,
+		&i.Codename,
+		&i.CreatedAt_2,
+		&i.UpdatedAt_2,
 	)
 	return i, err
 }
@@ -350,18 +377,40 @@ func (q *Queries) GetTeamMemberHashedPwd(ctx context.Context, codename string) (
 }
 
 const listAllocation = `-- name: ListAllocation :many
-SELECT id, team_member_id, parking_id, service_id, created_at, updated_at FROM allocation ORDER BY ID DESC
+SELECT allocation.id, team_member_id, parking_id, service_id, allocation.created_at, allocation.updated_at, parkingstation.id, parkingstation.name, codename, parkingstation.created_at, parkingstation.updated_at, service.id, service.name, date, service.created_at, service.updated_at, time FROM allocation 
+JOIN parkingstation ON parking_id = parkingstation.id 
+JOIN service ON service_id = service_id.id
 `
 
-func (q *Queries) ListAllocation(ctx context.Context) ([]Allocation, error) {
+type ListAllocationRow struct {
+	ID           int32
+	TeamMemberID int32
+	ParkingID    int32
+	ServiceID    int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	ID_2         int32
+	Name         string
+	Codename     string
+	CreatedAt_2  time.Time
+	UpdatedAt_2  time.Time
+	ID_3         int32
+	Name_2       string
+	Date         time.Time
+	CreatedAt_3  time.Time
+	UpdatedAt_3  time.Time
+	Time         sql.NullTime
+}
+
+func (q *Queries) ListAllocation(ctx context.Context) ([]ListAllocationRow, error) {
 	rows, err := q.db.QueryContext(ctx, listAllocation)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Allocation
+	var items []ListAllocationRow
 	for rows.Next() {
-		var i Allocation
+		var i ListAllocationRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.TeamMemberID,
@@ -369,6 +418,17 @@ func (q *Queries) ListAllocation(ctx context.Context) ([]Allocation, error) {
 			&i.ServiceID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ID_2,
+			&i.Name,
+			&i.Codename,
+			&i.CreatedAt_2,
+			&i.UpdatedAt_2,
+			&i.ID_3,
+			&i.Name_2,
+			&i.Date,
+			&i.CreatedAt_3,
+			&i.UpdatedAt_3,
+			&i.Time,
 		); err != nil {
 			return nil, err
 		}
@@ -518,6 +578,187 @@ func (q *Queries) ListService(ctx context.Context) ([]Service, error) {
 	return items, nil
 }
 
+const listServiceAllocation = `-- name: ListServiceAllocation :many
+SELECT allocation.id, team_member_id, parking_id, service_id, allocation.created_at, allocation.updated_at, parkingstation.id, parkingstation.name, codename, parkingstation.created_at, parkingstation.updated_at, service.id, service.name, date, service.created_at, service.updated_at, time FROM allocation 
+JOIN parkingstation ON parking_id = parkingstation.id 
+JOIN service ON service_id = service_id.id 
+WHERE service_id = $1
+`
+
+type ListServiceAllocationRow struct {
+	ID           int32
+	TeamMemberID int32
+	ParkingID    int32
+	ServiceID    int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	ID_2         int32
+	Name         string
+	Codename     string
+	CreatedAt_2  time.Time
+	UpdatedAt_2  time.Time
+	ID_3         int32
+	Name_2       string
+	Date         time.Time
+	CreatedAt_3  time.Time
+	UpdatedAt_3  time.Time
+	Time         sql.NullTime
+}
+
+func (q *Queries) ListServiceAllocation(ctx context.Context, serviceID int32) ([]ListServiceAllocationRow, error) {
+	rows, err := q.db.QueryContext(ctx, listServiceAllocation, serviceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListServiceAllocationRow
+	for rows.Next() {
+		var i ListServiceAllocationRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TeamMemberID,
+			&i.ParkingID,
+			&i.ServiceID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ID_2,
+			&i.Name,
+			&i.Codename,
+			&i.CreatedAt_2,
+			&i.UpdatedAt_2,
+			&i.ID_3,
+			&i.Name_2,
+			&i.Date,
+			&i.CreatedAt_3,
+			&i.UpdatedAt_3,
+			&i.Time,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listServiceParkingAllocation = `-- name: ListServiceParkingAllocation :many
+SELECT allocation.id As allocationId, service.id As serviceId, service.name As serviceName, parkingstation.id As parkingId, parkingstation.codename As parkingCodeName, parkingstation.name as parkingName, team_member.id As teamMemberId, team_member.fullname As teamMemberName, team_member.codename As teamMemberCodeName  FROM allocation 
+JOIN parkingstation ON parking_id = parkingstation.id 
+JOIN service ON service_id = service.id 
+JOIN team_member ON team_member_id = team_member.id 
+WHERE service_id = $1 and parking_id = $2
+`
+
+type ListServiceParkingAllocationParams struct {
+	ServiceID int32
+	ParkingID int32
+}
+
+type ListServiceParkingAllocationRow struct {
+	Allocationid       int32
+	Serviceid          int32
+	Servicename        string
+	Parkingid          int32
+	Parkingcodename    string
+	Parkingname        string
+	Teammemberid       int32
+	Teammembername     string
+	Teammembercodename string
+}
+
+func (q *Queries) ListServiceParkingAllocation(ctx context.Context, arg ListServiceParkingAllocationParams) ([]ListServiceParkingAllocationRow, error) {
+	rows, err := q.db.QueryContext(ctx, listServiceParkingAllocation, arg.ServiceID, arg.ParkingID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListServiceParkingAllocationRow
+	for rows.Next() {
+		var i ListServiceParkingAllocationRow
+		if err := rows.Scan(
+			&i.Allocationid,
+			&i.Serviceid,
+			&i.Servicename,
+			&i.Parkingid,
+			&i.Parkingcodename,
+			&i.Parkingname,
+			&i.Teammemberid,
+			&i.Teammembername,
+			&i.Teammembercodename,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listServiceParkingStations = `-- name: ListServiceParkingStations :many
+SELECT parkingsession.id, station_id, service_id, report, parkingsession.created_at, parkingsession.updated_at, parkingstation.id, name, codename, parkingstation.created_at, parkingstation.updated_at FROM parkingsession
+JOIN parkingstation ON station_id = parkingstation.id
+WHERE service_id = $1
+`
+
+type ListServiceParkingStationsRow struct {
+	ID          int32
+	StationID   int32
+	ServiceID   int32
+	Report      sql.NullString
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	ID_2        int32
+	Name        string
+	Codename    string
+	CreatedAt_2 time.Time
+	UpdatedAt_2 time.Time
+}
+
+func (q *Queries) ListServiceParkingStations(ctx context.Context, serviceID int32) ([]ListServiceParkingStationsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listServiceParkingStations, serviceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListServiceParkingStationsRow
+	for rows.Next() {
+		var i ListServiceParkingStationsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.StationID,
+			&i.ServiceID,
+			&i.Report,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ID_2,
+			&i.Name,
+			&i.Codename,
+			&i.CreatedAt_2,
+			&i.UpdatedAt_2,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTeamMember = `-- name: ListTeamMember :many
 SELECT id, fullname, codename, phone_number, email, is_team_leader, is_admin, department_id FROM team_member ORDER BY ID DESC
 `
@@ -611,4 +852,21 @@ func (q *Queries) ListTeamMemberByDepartment(ctx context.Context, departmentID i
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateService = `-- name: UpdateService :exec
+UPDATE service 
+SET name = $2, date = $3
+WHERE id = $1
+`
+
+type UpdateServiceParams struct {
+	ID   int32
+	Name string
+	Date time.Time
+}
+
+func (q *Queries) UpdateService(ctx context.Context, arg UpdateServiceParams) error {
+	_, err := q.db.ExecContext(ctx, updateService, arg.ID, arg.Name, arg.Date)
+	return err
 }

@@ -8,17 +8,27 @@ SELECT * FROM service ORDER BY ID DESC;
 -- name: GetService :one
 SELECT * FROM service WHERE id = $1;
 
+-- name: UpdateService :exec
+UPDATE service 
+SET name = $2, date = $3
+WHERE id = $1;
+
 
 -- name: CreateParkingStation :execresult
 INSERT INTO parkingstation(name, codename, created_at, updated_at)
 VALUES($1, $2, $3, $4);
+
+
+-- name: ListServiceParkingStations :many
+SELECT * FROM parkingsession
+JOIN parkingstation ON station_id = parkingstation.id
+WHERE service_id = $1;
 
 -- name: ListParkingStation :many
 SELECT * FROM parkingstation ORDER BY ID DESC;
 
 -- name: GetParkingStation :one
 SELECT * FROM parkingstation WHERE id = $1;
-
 
 
 -- name: CreateParkingSession :execresult
@@ -75,7 +85,27 @@ INSERT INTO allocation(team_member_id, parking_id, service_id, created_at, updat
 VALUES($1, $2, $3, $4, $5);
 
 -- name: ListAllocation :many
-SELECT * FROM allocation ORDER BY ID DESC;
+SELECT * FROM allocation 
+JOIN parkingstation ON parking_id = parkingstation.id 
+JOIN service ON service_id = service_id.id;
+
+
+-- name: ListServiceAllocation :many
+SELECT * FROM allocation 
+JOIN parkingstation ON parking_id = parkingstation.id 
+JOIN service ON service_id = service_id.id 
+WHERE service_id = $1;
+
+
+-- name: ListServiceParkingAllocation :many
+SELECT allocation.id As allocationId, service.id As serviceId, service.name As serviceName, parkingstation.id As parkingId, parkingstation.codename As parkingCodeName, parkingstation.name as parkingName, team_member.id As teamMemberId, team_member.fullname As teamMemberName, team_member.codename As teamMemberCodeName  FROM allocation 
+JOIN parkingstation ON parking_id = parkingstation.id 
+JOIN service ON service_id = service.id 
+JOIN team_member ON team_member_id = team_member.id 
+WHERE service_id = $1 and parking_id = $2;
 
 -- name: GetMemberAllocation :one
-SELECT * FROM allocation WHERE team_member_id = $1 AND service_id = $2;
+SELECT * FROM allocation JOIN parkingstation ON parking_id = parkingstation.id  WHERE team_member_id = $1 AND service_id = $2;
+
+-- name: DeleteAllocation :execresult
+DELETE FROM allocation WHERE id = $1;

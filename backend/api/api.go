@@ -67,13 +67,23 @@ func (a *AppServer) registerRoutes(r *chi.Mux) {
 	r.Get("/services/current", a.AuthedHandler(a.GetCurrentServicerHandler))
 	r.Post("/services/register", a.AuthedHandler(a.CreateServicerHandler))
 	r.Get("/services/details/{id}", a.AuthedHandler(a.GetServicerHandler))
+	r.Patch("/services/{id}/update", a.AuthedHandler(a.UpdateServiceHandler))
 	r.Get("/service/{id}/vehicles", a.AuthedHandler(a.GetServiceVehicleHandler))
+	r.Get("/service/{id}/parkingstations", a.AuthedHandler(a.GetServiceParkingStationsHandler))
 
 	r.Get("/departments", a.AuthedHandler(a.ListDepartmentsHandler))
 	r.Get("/departments/{id}", a.AuthedHandler(a.GetDepartmentHandler))
 	r.Get("/departments/{id}/team", a.AuthedHandler(a.ListDepartmentTeamHandler))
 	r.Post("/departments/create", MakeApiHandler(a.CreateDepartmentHandler))
 	// r.Post("/departments/create", a.AuthedHandler(a.CreateDepartmentHandler))
+
+	// allocation
+	r.Get("/allocations", a.AuthedHandler(a.ListAllocationHandler))
+	r.Post("/allocations/register", a.AuthedHandler(a.CreateAllocationHandler))
+	r.Delete("/allocations/{id}/delete", a.AuthedHandler(a.DeleteAllocationHandler))
+	r.Get("/service/{id}/allocations", a.AuthedHandler(a.ListServiceAllocationHandler))
+	r.Get("/teammember/{tid}/service/{sid}/allocation", a.AuthedHandler(a.GetTeamMemberServiceallocationHandler))
+	r.Get("/service/{id}/parkingstation/{pid}/allocations", a.AuthedHandler(a.ListServiceParkingAllocationHandler))
 
 	// auth
 	r.Get("/users", a.AuthedHandler(a.ListUserHandler))

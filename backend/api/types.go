@@ -136,6 +136,12 @@ type ServiceData struct {
 	Time time.Time `json:"time"`
 }
 
+type AllocationData struct {
+	TeamMemberId int `json:"teamMemberId"`
+	ParkingId    int `json:"parkingId"`
+	ServiceId    int `json:"serviceId"`
+}
+
 type DepartmentData struct {
 	Name       string `json:"name"`
 	Codename   string `json:"codename"`

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -101,7 +102,7 @@ func (a *AppServer) GetParkingSessionHandler(ctx context.Context, w http.Respons
 		return NewApiError("Unable to access record", http.StatusInternalServerError)
 	}
 
-	return RespondWithJSON(w, http.StatusCreated, session)
+	return RespondWithJSON(w, http.StatusOK, session)
 }
 
 func (a *AppServer) CreateParkingSessionHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
@@ -144,7 +145,7 @@ func (a *AppServer) ListParkingSessionHandler(ctx context.Context, w http.Respon
 		return NewApiError("Error fetching record", http.StatusInternalServerError)
 	}
 
-	return RespondWithJSON(w, http.StatusCreated, HandlerResponse{Count: len(results), Results: results})
+	return RespondWithJSON(w, http.StatusOK, HandlerResponse{Count: len(results), Results: results})
 }
 
 func (a *AppServer) ListParkingStationHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
@@ -153,7 +154,7 @@ func (a *AppServer) ListParkingStationHandler(ctx context.Context, w http.Respon
 		return NewApiError("Error fetching record", http.StatusInternalServerError)
 	}
 
-	return RespondWithJSON(w, http.StatusCreated, HandlerResponse{Count: len(results), Results: results})
+	return RespondWithJSON(w, http.StatusOK, HandlerResponse{Count: len(results), Results: results})
 }
 
 func (a *AppServer) CreateParkingStationHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
@@ -175,7 +176,13 @@ func (a *AppServer) CreateParkingStationHandler(ctx context.Context, w http.Resp
 		return NewApiError("Unable to store data", http.StatusInternalServerError)
 	}
 
-	return RespondWithJSON(w, http.StatusCreated, struct{}{})
+	results, err := a.db.ListParkingStation(ctx)
+	if err != nil {
+		return NewApiError("Error fetching record", http.StatusInternalServerError)
+	}
+
+	// send last created
+	return RespondWithJSON(w, http.StatusCreated, results[0])
 }
 
 func (a *AppServer) GetParkingStationHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
@@ -188,7 +195,7 @@ func (a *AppServer) GetParkingStationHandler(ctx context.Context, w http.Respons
 		return NewApiError("Unable to access record", http.StatusInternalServerError)
 	}
 
-	return RespondWithJSON(w, http.StatusCreated, station)
+	return RespondWithJSON(w, http.StatusOK, station)
 }
 
 func (a *AppServer) GetParkingStationVehiclesHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
@@ -201,7 +208,7 @@ func (a *AppServer) GetParkingStationVehiclesHandler(ctx context.Context, w http
 		return NewApiError("Unable to access records", http.StatusInternalServerError)
 	}
 
-	return RespondWithJSON(w, http.StatusCreated, HandlerResponse{Count: len(results), Results: results})
+	return RespondWithJSON(w, http.StatusOK, HandlerResponse{Count: len(results), Results: results})
 }
 
 func (a *AppServer) ListParkingSectionGroupsHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
@@ -232,7 +239,7 @@ func (a *AppServer) ListServicerHandler(ctx context.Context, w http.ResponseWrit
 		return NewApiError("Error fetching record", http.StatusInternalServerError)
 	}
 
-	return RespondWithJSON(w, http.StatusCreated, HandlerResponse{Count: len(results), Results: results})
+	return RespondWithJSON(w, http.StatusOK, HandlerResponse{Count: len(results), Results: results})
 }
 
 func (a *AppServer) GetCurrentServicerHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
@@ -244,7 +251,7 @@ func (a *AppServer) GetCurrentServicerHandler(ctx context.Context, w http.Respon
 	if len(results) < 1 {
 		return RespondWithJSON(w, http.StatusCreated, struct{}{})
 	}
-	return RespondWithJSON(w, http.StatusCreated, results[0])
+	return RespondWithJSON(w, http.StatusOK, results[0])
 }
 
 func (a *AppServer) CreateServicerHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
@@ -267,7 +274,12 @@ func (a *AppServer) CreateServicerHandler(ctx context.Context, w http.ResponseWr
 		return NewApiError("Unable to store data", http.StatusInternalServerError)
 	}
 
-	return RespondWithJSON(w, http.StatusCreated, struct{}{})
+	results, err := a.db.ListService(ctx)
+	if err != nil {
+		return NewApiError("Error fetching record", http.StatusInternalServerError)
+	}
+
+	return RespondWithJSON(w, http.StatusCreated, results[0])
 }
 
 func (a *AppServer) GetServicerHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
@@ -275,6 +287,37 @@ func (a *AppServer) GetServicerHandler(ctx context.Context, w http.ResponseWrite
 	if err != nil {
 		return NewApiError("Invalid data provided", http.StatusBadRequest)
 	}
+	service, fetch_err := a.db.GetService(ctx, int32(serviceId))
+	if fetch_err != nil {
+		return NewApiError("Unable to access record", http.StatusInternalServerError)
+	}
+
+	return RespondWithJSON(w, http.StatusOK, service)
+}
+
+func (a *AppServer) UpdateServiceHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+	serviceId, e := strconv.Atoi(chi.URLParam(r, "id"))
+	if e != nil {
+		return NewApiError("Invalid data provided", http.StatusBadRequest)
+	}
+
+	var serviceData ServiceData
+	err := json.NewDecoder(r.Body).Decode(&serviceData)
+	if err != nil {
+		return NewApiError("Failed to decode request body", http.StatusBadRequest)
+	}
+	defer r.Body.Close()
+
+	// update details
+	u_err := a.db.UpdateService(ctx, database.UpdateServiceParams{
+		ID:   int32(serviceId),
+		Name: serviceData.Name,
+		Date: serviceData.Date,
+	})
+	if u_err != nil {
+		return NewApiError("Unable to update data", http.StatusInternalServerError)
+	}
+
 	service, fetch_err := a.db.GetService(ctx, int32(serviceId))
 	if fetch_err != nil {
 		return NewApiError("Unable to access record", http.StatusInternalServerError)
@@ -293,5 +336,119 @@ func (a *AppServer) GetServiceVehicleHandler(ctx context.Context, w http.Respons
 		return NewApiError("Unable to access records", http.StatusInternalServerError)
 	}
 
-	return RespondWithJSON(w, http.StatusCreated, HandlerResponse{Count: len(results), Results: results})
+	return RespondWithJSON(w, http.StatusOK, HandlerResponse{Count: len(results), Results: results})
+}
+
+func (a *AppServer) GetServiceParkingStationsHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+	serviceId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return NewApiError("Invalid data provided", http.StatusBadRequest)
+	}
+	results, fetch_err := a.db.ListServiceParkingStations(ctx, int32(serviceId))
+	if fetch_err != nil {
+		return NewApiError("Unable to access records", http.StatusInternalServerError)
+	}
+
+	return RespondWithJSON(w, http.StatusOK, HandlerResponse{Count: len(results), Results: results})
+}
+
+func (a *AppServer) ListAllocationHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+	results, err := a.db.ListAllocation(ctx)
+	if err != nil {
+		return NewApiError("Error fetching record", http.StatusInternalServerError)
+	}
+	return RespondWithJSON(w, http.StatusOK, HandlerResponse{Count: len(results), Results: results})
+}
+
+func (a *AppServer) CreateAllocationHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+	var allocationData AllocationData
+
+	err := json.NewDecoder(r.Body).Decode(&allocationData)
+	if err != nil {
+		return NewApiError("Failed to decode request body", http.StatusBadRequest)
+	}
+	defer r.Body.Close()
+
+	_, write_err := a.db.CreateAllocation(ctx, database.CreateAllocationParams{
+		TeamMemberID: int32(allocationData.TeamMemberId),
+		ParkingID:    int32(allocationData.ParkingId),
+		ServiceID:    int32(allocationData.ServiceId),
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	})
+	if write_err != nil {
+		return NewApiError("Unable to store data", http.StatusInternalServerError)
+	}
+
+	return RespondWithJSON(w, http.StatusCreated, struct{}{})
+}
+
+func (a *AppServer) ListServiceAllocationHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+	serviceId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return NewApiError("Invalid data provided", http.StatusBadRequest)
+	}
+	results, fetch_err := a.db.ListServiceAllocation(ctx, int32(serviceId))
+	if fetch_err != nil {
+		return NewApiError("Unable to access records", http.StatusInternalServerError)
+	}
+
+	return RespondWithJSON(w, http.StatusOK, HandlerResponse{Count: len(results), Results: results})
+}
+
+func (a *AppServer) GetTeamMemberServiceallocationHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+	teamMemberId, err := strconv.Atoi(chi.URLParam(r, "tid"))
+	if err != nil {
+		return NewApiError("Invalid data provided", http.StatusBadRequest)
+	}
+
+	serviceId, err := strconv.Atoi(chi.URLParam(r, "sid"))
+	if err != nil {
+		return NewApiError("Invalid data provided", http.StatusBadRequest)
+	}
+
+	result, fetch_err := a.db.GetMemberAllocation(ctx, database.GetMemberAllocationParams{
+		TeamMemberID: int32(teamMemberId),
+		ServiceID:    int32(serviceId),
+	})
+	if fetch_err != nil {
+		return NewApiError("Unable to access records", http.StatusInternalServerError)
+	}
+
+	return RespondWithJSON(w, http.StatusOK, result)
+}
+
+func (a *AppServer) DeleteAllocationHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+	allocationId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return NewApiError("Invalid data provided", http.StatusBadRequest)
+	}
+	_, fetch_err := a.db.DeleteAllocation(ctx, int32(allocationId))
+	if fetch_err != nil {
+		return NewApiError("Unable to access records", http.StatusInternalServerError)
+	}
+
+	return RespondWithJSON(w, http.StatusOK, struct{}{})
+}
+
+func (a *AppServer) ListServiceParkingAllocationHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+	serviceId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return NewApiError("Invalid data provided", http.StatusBadRequest)
+	}
+
+	parking_id, err := strconv.Atoi(chi.URLParam(r, "pid"))
+	if err != nil {
+		return NewApiError("Invalid data provided", http.StatusBadRequest)
+	}
+	results, fetch_err := a.db.ListServiceParkingAllocation(ctx, database.ListServiceParkingAllocationParams{
+		ServiceID: int32(serviceId),
+		ParkingID: int32(parking_id),
+	})
+	if fetch_err != nil {
+		fmt.Printf("\n\n %v \n\n", fetch_err)
+		return NewApiError("Unable to access records", http.StatusInternalServerError)
+	}
+
+	return RespondWithJSON(w, http.StatusOK, HandlerResponse{Count: len(results), Results: results})
 }
