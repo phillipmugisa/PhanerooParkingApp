@@ -251,7 +251,7 @@ class VehicleList extends StatelessWidget {
             var jsonData = json.decode(snapshot.data!.body);
             if (jsonData["results"] == null || jsonData["results"] == Null) {
               return const Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
                     height: 20,

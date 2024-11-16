@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:phaneroo_parking/requests.dart';
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int? currentServiceID;
+  Map<String, dynamic>? currentServiceData;
   late Future userData;
 
   @override
@@ -21,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
     getCurrentService().then((response) {
       var jsonData = json.decode(response.body);
       currentServiceID = jsonData["ID"];
+      currentServiceData = jsonData;
     }).catchError((val) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -57,13 +60,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Container(); // Return an empty container while redirecting
                 }
                 var jsonData = json.decode(snapshot.data!.body);
+                SharedPreferences.getInstance().then((prefs) {
+                  prefs.setInt("userID", jsonData["ID"]);
+                  prefs.setInt("departmentId", jsonData["DepartmentID"]);
+                });
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 0),
                   children: [
                     // TopPageActions(),
                     // SizedBox(height: 10.0),
                     // current user information
-                    PersonnalDetails(userData: jsonData),
+                    PersonnalDetails(
+                        userData: jsonData,
+                        currentServiceData: currentServiceData),
                     const SizedBox(height: 10.0),
                     ParkingStats(
                       currentServiceID: currentServiceID,
@@ -208,12 +217,54 @@ class _TeamListState extends State<TeamList> {
                   List<DataRow> team = groups
                       .map((g) => DataRow(cells: [
                             DataCell(Text(g["Codename"])),
-                            DataCell(Text(g["Fullname"])),
+                            DataCell(
+                              FutureBuilder(
+                                future: getTeamMemberServiceAllocation(
+                                    g["ID"], widget.serviceID),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  } else if (snapshot.hasError) {
+                                    return Container();
+                                  } else if (snapshot.hasData) {
+                                    final statusCode =
+                                        snapshot.data!.statusCode;
+                                    if (statusCode >= 400 && statusCode < 500) {
+                                      return Container(); // Return an empty container while redirecting
+                                    }
+                                    var jsonData =
+                                        json.decode(snapshot.data!.body);
+                                    if (jsonData["Name"] == null) {
+                                      return Text(
+                                        "Not Deployed",
+                                        style: GoogleFonts.lato(
+                                          textStyle: const TextStyle(
+                                            fontSize: 14.0,
+                                            fontWeight: FontWeight.normal,
+                                          ),
+                                        ),
+                                      );
+                                    }
+
+                                    return Text(
+                                      jsonData["Name"],
+                                      style: GoogleFonts.lato(
+                                        textStyle: const TextStyle(
+                                          fontSize: 14.0,
+                                          fontWeight: FontWeight.normal,
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    return Container();
+                                  }
+                                },
+                              ),
+                            ),
                             // get allocation
-                            DataCell(TextButton(
-                              onPressed: () {},
-                              child: const Icon(Icons.person),
-                            )),
+                            DataCell(Text(g["PhoneNumber"])),
                           ]))
                       .toList();
 
@@ -222,7 +273,7 @@ class _TeamListState extends State<TeamList> {
                     columns: const [
                       DataColumn(label: Text("Code Name")),
                       DataColumn(label: Text("Allocation")),
-                      DataColumn(label: Text("Details")),
+                      DataColumn(label: Text("Tel No.")),
                     ],
                     rows: team,
                   );
@@ -309,6 +360,18 @@ class _ParkingStatsState extends State<ParkingStats> {
                 return Container();
               } else if (snapshot.hasData) {
                 var jsonData = json.decode(snapshot.data!.body);
+                if (jsonData["results"] == null ||
+                    jsonData["results"] == Null) {
+                  return const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Text("No Vehicles registered yet for current Service.")
+                    ],
+                  );
+                }
                 var groups = jsonData["results"] as List;
 
                 List<DataRow> groupings = groups
@@ -343,11 +406,18 @@ class _ParkingStatsState extends State<ParkingStats> {
   }
 }
 
-class PersonnalDetails extends StatelessWidget {
+class PersonnalDetails extends StatefulWidget {
+  final Map<String, dynamic>? currentServiceData;
   final Map<String, dynamic> userData;
 
-  const PersonnalDetails({super.key, required this.userData});
+  const PersonnalDetails(
+      {super.key, required this.userData, required this.currentServiceData});
 
+  @override
+  State<PersonnalDetails> createState() => _PersonnalDetailsState();
+}
+
+class _PersonnalDetailsState extends State<PersonnalDetails> {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -362,7 +432,7 @@ class PersonnalDetails extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hello ${userData["Codename"]}',
+                  'Hello ${widget.userData["Codename"]}',
                   style: GoogleFonts.lato(
                     textStyle: const TextStyle(
                       fontSize: 16.0,
@@ -372,7 +442,7 @@ class PersonnalDetails extends StatelessWidget {
                 ),
                 const SizedBox(height: 2.5),
                 Text(
-                  'Welcome to Phaneroo 700',
+                  'Welcome to ${widget.currentServiceData!["Name"]}',
                   style: GoogleFonts.lato(
                     textStyle: const TextStyle(
                       fontSize: 20.0,
@@ -392,14 +462,48 @@ class PersonnalDetails extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Text(
-                      "Upper parking",
-                      style: GoogleFonts.lato(
-                        textStyle: const TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    FutureBuilder(
+                      future: getTeamMemberServiceAllocation(
+                          widget.userData["ID"],
+                          widget.currentServiceData!["ID"]),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Container();
+                        } else if (snapshot.hasData) {
+                          final statusCode = snapshot.data!.statusCode;
+                          if (statusCode >= 400 && statusCode < 500) {
+                            return Container(); // Return an empty container while redirecting
+                          }
+                          var jsonData = json.decode(snapshot.data!.body);
+                          if (jsonData["Name"] == null) {
+                            return Text(
+                              "Not Deployed",
+                              style: GoogleFonts.lato(
+                                textStyle: const TextStyle(
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            );
+                          }
+
+                          return Text(
+                            jsonData["Name"],
+                            style: GoogleFonts.lato(
+                              textStyle: const TextStyle(
+                                fontSize: 16.0,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          );
+                        } else {
+                          return Container();
+                        }
+                      },
                     ),
                   ],
                 ),

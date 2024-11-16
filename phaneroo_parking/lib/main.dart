@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Parking Assistant",
-      initialRoute: "/",
+      initialRoute: "/login",
       routes: {
         "/": (context) => const HomeScreen(),
         "/scan": (context) => const ScanCarScreen(),

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+// import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:google_fonts/google_fonts.dart';
@@ -228,6 +228,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                       var services = jsonData["results"] as List;
 
                       return DropdownMenu(
+                        width: double.infinity,
                         initialSelection: currentServiceId,
                         controller: servicesController,
                         requestFocusOnTap: true,
@@ -260,6 +261,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                       var parkings = jsonData["results"] as List;
 
                       return DropdownMenu(
+                        width: double.infinity,
                         initialSelection: parkings[0]["Codename"],
                         controller: parkingController,
                         requestFocusOnTap: true,
@@ -533,7 +535,7 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   bool isCameraActive = true;
   bool isScanning = false;
 
-  final textRecognizer = TextRecognizer();
+  // final textRecognizer = TextRecognizer();
 
   @override
   void initState() {
@@ -547,7 +549,7 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _stopCamera();
-    textRecognizer.close();
+    // textRecognizer.close();
     super.dispose();
   }
 
@@ -562,7 +564,7 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     } else if (state == AppLifecycleState.resumed &&
         _cameraController != null &&
         _cameraController!.value.isInitialized) {
-      _startCamera();
+      // _startCamera();
     }
   }
 
@@ -740,19 +742,20 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
           content: Text("Scanning"),
         ),
       );
-      final pictureFile = await _cameraController!.takePicture();
+      // final pictureFile = await _cameraController!.takePicture();
 
-      final file = File(pictureFile.path);
+      // final file = File(pictureFile.path);
 
-      final inputImage = InputImage.fromFile(file);
-      final recognizedText = await textRecognizer.processImage(inputImage);
+      // final inputImage = InputImage.fromFile(file);
+      // final recognizedText = await textRecognizer.processImage(inputImage);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(recognizedText.text),
-        ),
-      );
-      return recognizedText.text;
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(recognizedText.text),
+      //   ),
+      // );
+      // return recognizedText.text;
+      return "test";
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
