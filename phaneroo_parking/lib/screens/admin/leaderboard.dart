@@ -30,7 +30,7 @@ class _LeaderBoardState extends State<LeaderBoard> {
             future: userData,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(child: SizedBox());
               } else if (snapshot.hasError) {
                 Future.delayed(Duration.zero, () {
                   Navigator.pushNamed(context, '/login');
@@ -166,7 +166,7 @@ class _IntroCardState extends State<IntroCard> {
                   future: currentServiceData,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const Center(child: SizedBox());
                     } else if (snapshot.hasError) {
                       return Container();
                     } else if (snapshot.hasData) {
@@ -282,7 +282,7 @@ class _ServicesListState extends State<ServicesList> {
               future: serviceList,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: SizedBox());
                 } else if (snapshot.hasError) {
                   return Container();
                 } else if (snapshot.hasData) {

@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
             future: userData,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const SizedBox();
               } else if (snapshot.hasError) {
                 Future.delayed(Duration.zero, () {
                   Navigator.pushNamed(context, '/login');
@@ -63,6 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 SharedPreferences.getInstance().then((prefs) {
                   prefs.setInt("userID", jsonData["ID"]);
                   prefs.setInt("departmentId", jsonData["DepartmentID"]);
+                  prefs.setInt(
+                      "currentServiceID", jsonData["currentServiceID"]);
                 });
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 0),
@@ -203,7 +205,7 @@ class _TeamListState extends State<TeamList> {
               future: departmentList,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const SizedBox();
                 } else if (snapshot.hasError) {
                   Future.delayed(Duration.zero, () {
                     Navigator.pushNamed(context, '/login');
@@ -225,7 +227,9 @@ class _TeamListState extends State<TeamList> {
                                   if (snapshot.connectionState ==
                                       ConnectionState.waiting) {
                                     return const Center(
-                                        child: CircularProgressIndicator());
+                                        child: SizedBox(
+                                      width: 0,
+                                    ));
                                   } else if (snapshot.hasError) {
                                     return Container();
                                   } else if (snapshot.hasData) {
@@ -351,7 +355,7 @@ class _ParkingStatsState extends State<ParkingStats> {
             future: currentServiceParkingStats,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const SizedBox();
               } else if (snapshot.hasError) {
                 Future.delayed(Duration.zero, () {
                   Navigator.pushNamed(context, '/login');
@@ -376,7 +380,7 @@ class _ParkingStatsState extends State<ParkingStats> {
 
                 List<DataRow> groupings = groups
                     .map((g) => DataRow(cells: [
-                          DataCell(Text(g["Codename"])),
+                          // DataCell(Text(g["Codename"])),
                           DataCell(Text(g["Name"])),
                           DataCell(Text(g["Count"].toString())),
                         ]))
@@ -385,7 +389,7 @@ class _ParkingStatsState extends State<ParkingStats> {
                 return DataTable(
                   border: TableBorder.all(color: Colors.grey.shade300),
                   columns: const [
-                    DataColumn(label: Text("Parking")),
+                    // DataColumn(label: Text("Parking")),
                     DataColumn(label: Text("Name")),
                     DataColumn(label: Text("Count")),
                   ],
@@ -469,8 +473,7 @@ class _PersonnalDetailsState extends State<PersonnalDetails> {
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
-                          return const Center(
-                              child: CircularProgressIndicator());
+                          return const SizedBox();
                         } else if (snapshot.hasError) {
                           return Container();
                         } else if (snapshot.hasData) {
@@ -479,6 +482,7 @@ class _PersonnalDetailsState extends State<PersonnalDetails> {
                             return Container(); // Return an empty container while redirecting
                           }
                           var jsonData = json.decode(snapshot.data!.body);
+
                           if (jsonData["Name"] == null) {
                             return Text(
                               "Not Deployed",
@@ -490,6 +494,10 @@ class _PersonnalDetailsState extends State<PersonnalDetails> {
                               ),
                             );
                           }
+
+                          SharedPreferences.getInstance().then((prefs) {
+                            prefs.setInt("parkingId", jsonData["ParkingID"]);
+                          });
 
                           return Text(
                             jsonData["Name"],

@@ -82,7 +82,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
                     future: servicesData,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const Center(child: SizedBox(width: 0));
                       } else if (snapshot.hasError) {
                         return Text('Error: ${snapshot.error}');
                       } else if (snapshot.hasData) {
@@ -126,7 +126,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
                     future: parkingList,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const Center(child: SizedBox(width: 0));
                       } else if (snapshot.hasError) {
                         return Text('Error: ${snapshot.error}');
                       } else if (snapshot.hasData) {
@@ -244,7 +244,7 @@ class VehicleList extends StatelessWidget {
         future: vehiclesData,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: SizedBox(width: 0));
           } else if (snapshot.hasError) {
             return Text('Error: ${snapshot.error}');
           } else if (snapshot.hasData) {
@@ -264,6 +264,10 @@ class VehicleList extends StatelessWidget {
             var vehicles = jsonData["results"] as List;
             int vehicleCount = vehicles.length;
 
+            for (dynamic vehicle in vehicles) {
+              vehicle["CardNumber"] = vehicle["CardNumber"]["String"];
+            }
+
             List<DataRow> widgetList = vehicles
                 .map(
                   (vehicle) => DataRow(
@@ -273,12 +277,13 @@ class VehicleList extends StatelessWidget {
                           onTap: () {
                             Map<String, dynamic> data = {
                               'licenseNo': vehicle["LicenseNumber"],
-                              "id": vehicle["ID"]
+                              "id": vehicle["ID"],
+                              "is_checked_out": vehicle["IsCheckedOut"]["Bool"]
                             };
                             Navigator.pushNamed(context, "/driver_details",
                                 arguments: data);
                           },
-                          child: Text(vehicle["LicenseNumber"]),
+                          child: Text("${vehicle["CardNumber"]}"),
                         ),
                       ),
                       DataCell(
@@ -286,14 +291,29 @@ class VehicleList extends StatelessWidget {
                           onTap: () {
                             Map<String, dynamic> data = {
                               'licenseNo': vehicle["LicenseNumber"],
-                              "id": vehicle["ID"]
+                              "id": vehicle["ID"],
+                              "is_checked_out": vehicle["IsCheckedOut"]["Bool"]
                             };
                             Navigator.pushNamed(context, "/driver_details",
                                 arguments: data);
                           },
-                          child: Text(vehicle["Fullname"]),
+                          child: Text(vehicle["LicenseNumber"]),
                         ),
                       ),
+                      // DataCell(
+                      //   GestureDetector(
+                      //     onTap: () {
+                      //       Map<String, dynamic> data = {
+                      //         'licenseNo': vehicle["LicenseNumber"],
+                      //         "id": vehicle["ID"],
+                      //         "is_checked_out": vehicle["IsCheckedOut"]["Bool"]
+                      //       };
+                      //       Navigator.pushNamed(context, "/driver_details",
+                      //           arguments: data);
+                      //     },
+                      //     child: Text(vehicle["Fullname"]),
+                      //   ),
+                      // ),
                       vehicle["IsCheckedOut"]["Bool"] == true
                           ? const DataCell(
                               Text(
@@ -364,7 +384,7 @@ class VehicleList extends StatelessWidget {
                     columns: [
                       DataColumn(
                           label: Text(
-                        "License",
+                        "Card",
                         style: GoogleFonts.lato(
                           textStyle: const TextStyle(
                             fontSize: 14.0,
@@ -374,7 +394,7 @@ class VehicleList extends StatelessWidget {
                       )),
                       DataColumn(
                           label: Text(
-                        "Driver",
+                        "License",
                         style: GoogleFonts.lato(
                           textStyle: const TextStyle(
                             fontSize: 14.0,
@@ -382,6 +402,16 @@ class VehicleList extends StatelessWidget {
                           ),
                         ),
                       )),
+                      // DataColumn(
+                      //     label: Text(
+                      //   "Driver",
+                      //   style: GoogleFonts.lato(
+                      //     textStyle: const TextStyle(
+                      //       fontSize: 14.0,
+                      //       fontWeight: FontWeight.bold,
+                      //     ),
+                      //   ),
+                      // )),
                       DataColumn(
                           label: Text(
                         "Status",

@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import 'package:phaneroo_parking/requests.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ScanCarScreen extends StatefulWidget {
   const ScanCarScreen({super.key});
@@ -25,6 +26,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
   int? vehicleId;
   String licenseNo = "";
   bool isCheckedout = true;
+  bool is_Search = false;
 
   String? parkingValue;
   late Future parkingList;
@@ -35,22 +37,29 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
   final TextEditingController parkingController = TextEditingController();
   final TextEditingController driverNameController = TextEditingController();
   final TextEditingController telNumberController = TextEditingController();
+  final TextEditingController cardNumberController = TextEditingController();
 
   void populateFields(String value) {
     final Future response = searchVehicles(value);
 
     // to cater from camera
     setState(() {
-      licenseNoController.text = value;
+      // licenseNoController.text = value;
+      is_Search = true;
     });
 
     response.then((data) {
       var jsonData = json.decode(data!.body);
 
+      setState(() {
+        is_Search = false;
+      });
+
       if (jsonData["count"] < 1) return;
 
       var record = jsonData["results"][0];
       setState(() {
+        licenseNoController.text = record["LicenseNumber"].toString();
         driverNameController.text = record["Fullname"].toString();
         telNumberController.text = record["PhoneNumber"].toString();
 
@@ -120,68 +129,76 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
   }
 
   void registerVehicle() {
-    var data = <String, dynamic>{
-      'licenseNo': licenseNoController.text,
-      'driverName': driverNameController.text,
-      'driverTelNo': telNumberController.text,
-      'ServiceId': currentServiceId,
-      'ParkingId': parkingId
-    };
-    if (currentServiceId == null || parkingId == null) {
-      showDialog<String>(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-          title: const Text('Error'),
-          content: const Text('Provide required details'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
+    // get parkingId
+    SharedPreferences.getInstance().then((prefs) {
+      int? parkingId = prefs.getInt("parkingId");
+      if (parkingId != null) {
+        var data = <String, dynamic>{
+          'licenseNo': licenseNoController.text,
+          'driverName': driverNameController.text,
+          'driverTelNo': telNumberController.text,
+          "cardNumber": cardNumberController.text.toString(),
+          'ServiceId': currentServiceId,
+          'ParkingId': parkingId
+        };
+        if (currentServiceId == null) {
+          showDialog<String>(
+            context: context,
+            builder: (BuildContext context) => AlertDialog(
+              title: const Text('Error'),
+              content: const Text('Provide required details'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
-      return;
-    }
+          );
+          return;
+        }
 
-    saveVehicle(data).then((response) {
-      // var jsonData = json.decode(response.body);
+        saveVehicle(data).then((response) {
+          // var jsonData = json.decode(response.body);
 
-      if (response.statusCode > 399) {
-        showDialog<String>(
-          context: context,
-          builder: (BuildContext context) => AlertDialog(
-            title: const Text('Error'),
-            content: const Text('Unable to register vehicle'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(context, 'OK'),
-                child: const Text('OK'),
+          if (response.statusCode > 399) {
+            showDialog<String>(
+              context: context,
+              builder: (BuildContext context) => AlertDialog(
+                title: const Text('Error'),
+                content: const Text('Unable to register vehicle'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, 'OK'),
+                    child: const Text('OK'),
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
-      } else {
-        showDialog<String>(
-          context: context,
-          builder: (BuildContext context) => AlertDialog(
-            title: const Text('Success'),
-            content: const Text('Registered Successfully'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.popAndPushNamed(context, "/scan"),
-                child: const Text('OK'),
+            );
+          } else {
+            showDialog<String>(
+              context: context,
+              builder: (BuildContext context) => AlertDialog(
+                title: const Text('Success'),
+                content: const Text('Registered Successfully'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.popAndPushNamed(context, "/scan"),
+                    child: const Text('OK'),
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
+            );
+          }
+        }).catchError((err) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Connection Difficulty'),
+            ),
+          );
+        });
       }
-    }).catchError((err) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Connection Difficulty'),
-        ),
-      );
     });
   }
 
@@ -211,248 +228,236 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 0),
           children: [
-            CameraView(populateFields: populateFields),
-            const SizedBox(height: 20.0),
-            Row(
-              // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                FutureBuilder(
-                  future: servicesData,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    } else if (snapshot.hasData) {
-                      var jsonData = json.decode(snapshot.data!.body);
-                      var services = jsonData["results"] as List;
-
-                      return DropdownMenu(
-                        width: double.infinity,
-                        initialSelection: currentServiceId,
-                        controller: servicesController,
-                        requestFocusOnTap: true,
-                        label: const Text('Service'),
-                        onSelected: (value) {
-                          currentServiceId = value["ID"];
-                        },
-                        dropdownMenuEntries: services
-                            .map((v) => DropdownMenuEntry(
-                                  value: v,
-                                  label: v["Name"],
-                                ))
-                            .toList(),
-                      );
-                    } else {
-                      return const Text('Try Again');
-                    }
-                  },
-                ),
-                const SizedBox(width: 10),
-                FutureBuilder(
-                  future: parkingList,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    } else if (snapshot.hasData) {
-                      var jsonData = json.decode(snapshot.data!.body);
-                      var parkings = jsonData["results"] as List;
-
-                      return DropdownMenu(
-                        width: double.infinity,
-                        initialSelection: parkings[0]["Codename"],
-                        controller: parkingController,
-                        requestFocusOnTap: true,
-                        label: const Text('Parking'),
-                        onSelected: (value) {
-                          parkingId = value["ID"];
-                        },
-                        dropdownMenuEntries: parkings
-                            .map((v) => DropdownMenuEntry(
-                                  value: v,
-                                  label: v["Codename"],
-                                ))
-                            .toList(),
-                      );
-                    } else {
-                      return const Text('Try Again');
-                    }
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 10.0),
-            TextFormField(
-              controller: licenseNoController,
-              maxLines: 1,
-              maxLength: licenseNoLength,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                label: Text(
-                  "License Number (e.g. USH 234A)",
-                  style: GoogleFonts.lato(
-                    textStyle: const TextStyle(
-                      fontSize: 14.0,
-                    ),
-                  ),
-                ),
-              ),
-              onChanged: (value) {
-                if (value.length == licenseNoLength) {
-                  // check for existing records
-                  populateFields(value);
-                }
-              },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter license number';
-                }
-                if (value.length < licenseNoLength - 1) {
-                  return 'Incomplete license number';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 5.0),
-            Column(
-              children: [
-                TextFormField(
-                  controller: driverNameController,
-                  maxLines: 1,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    label: Text(
-                      "Driver Name",
+            // CameraView(populateFields: populateFields),
+            Card(
+              color: Colors.white,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    vertical: 15.0, horizontal: 15.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Enter Vehicle Registration Details",
                       style: GoogleFonts.lato(
                         textStyle: const TextStyle(
-                          fontSize: 14.0,
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                  ),
-                  validator: (value) {},
-                ),
-                const SizedBox(height: 20.0),
-                TextFormField(
-                  controller: telNumberController,
-                  maxLines: 1,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    label: Text(
-                      "Phone Number",
-                      style: GoogleFonts.lato(
-                        textStyle: const TextStyle(
-                          fontSize: 14.0,
-                        ),
-                      ),
-                    ),
-                  ),
-                  validator: (value) {},
-                ),
-              ],
-            ),
-            const SizedBox(height: 10.0),
-            Container(
-              padding: const EdgeInsets.all(2.5),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  // IconButton(
-                  //   onPressed: () {},
-                  //   icon: const Icon(Icons.redo_rounded),
-                  //   color: Colors.white,
-                  //   style: ButtonStyle(
-                  //       backgroundColor:
-                  //           WidgetStateProperty.all<Color>(Colors.black)),
-                  //   constraints: const BoxConstraints(
-                  //     minHeight: 50.0,
-                  //     minWidth: 50.0,
-                  //   ),
-                  // ),
-                  isCheckedout
-                      ? ConstrainedBox(
-                          constraints: const BoxConstraints(minHeight: 50.0),
-                          child: ElevatedButton(
-                            onPressed: () {
-                              licenseNo = licenseNoController.text;
-
-                              if (licenseNo.length < 5) {
-                                // if (licenseNo.length < licenseNoLength - 1 ||
-                                //     !pattern.hasMatch(licenseNo)) {
-                                showDialog<String>(
-                                  context: context,
-                                  builder: (BuildContext context) =>
-                                      AlertDialog(
-                                    title: const Text('Error'),
-                                    content: const Text(
-                                        'Invalid license number (e.g. UAA 001A)'),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, 'OK'),
-                                        child: const Text('OK'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              } else {
-                                // save data
-                                registerVehicle();
-                              }
-
-                              return;
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all<Color>(
-                                  Colors.black87),
-                            ),
-                            child: const Row(
-                              children: [
-                                Text(
-                                  "Check In",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(width: 20.0),
-                                Icon(
-                                  Icons.check_circle,
-                                  color: Colors.white,
-                                )
-                              ],
+                    const SizedBox(height: 10.0),
+                    TextFormField(
+                      controller: licenseNoController,
+                      maxLines: 1,
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        label: Text(
+                          "License Number (e.g. USH 234A)",
+                          style: GoogleFonts.lato(
+                            textStyle: const TextStyle(
+                              fontSize: 14.0,
                             ),
                           ),
-                        )
-                      : ConstrainedBox(
-                          constraints: const BoxConstraints(minHeight: 50.0),
-                          child: ElevatedButton(
-                              onPressed: () => checkoutVehicle(),
-                              style: ButtonStyle(
-                                backgroundColor: WidgetStateProperty.all<Color>(
-                                    const Color.fromARGB(255, 3, 206, 108)),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        if (value.length >= 8) {
+                          // check for existing records
+                          populateFields(value);
+                        }
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter license number';
+                        }
+                        if (value.length < licenseNoLength - 1) {
+                          return 'Incomplete license number';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 5.0),
+                    is_Search == true
+                        ? Text(
+                            "Checking for existing records.",
+                            style: GoogleFonts.lato(
+                              textStyle: const TextStyle(
+                                fontSize: 12.0,
+                                fontWeight: FontWeight.bold,
                               ),
-                              child: const Row(
-                                children: [
-                                  Text(
-                                    "Check Out",
-                                    style: TextStyle(
-                                      color: Colors.white,
+                              color: Colors.teal,
+                            ),
+                          )
+                        : const SizedBox(height: 0.0),
+                    const SizedBox(height: 10.0),
+                    Column(
+                      children: [
+                        TextFormField(
+                          controller: driverNameController,
+                          maxLines: 1,
+                          decoration: InputDecoration(
+                            border: const OutlineInputBorder(),
+                            label: Text(
+                              "Driver Name",
+                              style: GoogleFonts.lato(
+                                textStyle: const TextStyle(
+                                  fontSize: 14.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                          validator: (value) {},
+                        ),
+                        const SizedBox(height: 20.0),
+                        TextFormField(
+                          controller: telNumberController,
+                          maxLines: 1,
+                          decoration: InputDecoration(
+                            border: const OutlineInputBorder(),
+                            label: Text(
+                              "Phone Number",
+                              style: GoogleFonts.lato(
+                                textStyle: const TextStyle(
+                                  fontSize: 14.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                          validator: (value) {},
+                        ),
+                        const SizedBox(height: 20.0),
+                        TextFormField(
+                          controller: cardNumberController,
+                          maxLines: 1,
+                          decoration: InputDecoration(
+                            border: const OutlineInputBorder(),
+                            label: Text(
+                              "Card Number",
+                              style: GoogleFonts.lato(
+                                textStyle: const TextStyle(
+                                  fontSize: 14.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                          validator: (value) {},
+                          onChanged: (value) {
+                            populateFields(value);
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10.0),
+                    Container(
+                      padding: const EdgeInsets.all(2.5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // IconButton(
+                          //   onPressed: () {},
+                          //   icon: const Icon(Icons.redo_rounded),
+                          //   color: Colors.white,
+                          //   style: ButtonStyle(
+                          //       backgroundColor:
+                          //           WidgetStateProperty.all<Color>(Colors.black)),
+                          //   constraints: const BoxConstraints(
+                          //     minHeight: 50.0,
+                          //     minWidth: 50.0,
+                          //   ),
+                          // ),
+                          isCheckedout
+                              ? ConstrainedBox(
+                                  constraints:
+                                      const BoxConstraints(minHeight: 50.0),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      licenseNo = licenseNoController.text;
+
+                                      if (licenseNo.length < 5) {
+                                        // if (licenseNo.length < licenseNoLength - 1 ||
+                                        //     !pattern.hasMatch(licenseNo)) {
+                                        showDialog<String>(
+                                          context: context,
+                                          builder: (BuildContext context) =>
+                                              AlertDialog(
+                                            title: const Text('Error'),
+                                            content: const Text(
+                                                'Invalid license number (e.g. UAA 001A)'),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context, 'OK'),
+                                                child: const Text('OK'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      } else {
+                                        // save data
+                                        registerVehicle();
+                                      }
+
+                                      return;
+                                    },
+                                    style: ButtonStyle(
+                                      backgroundColor:
+                                          WidgetStateProperty.all<Color>(
+                                              Colors.black87),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Text(
+                                          "Check In",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        SizedBox(width: 20.0),
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: Colors.white,
+                                        )
+                                      ],
                                     ),
                                   ),
-                                  SizedBox(width: 20.0),
-                                  Icon(
-                                    Icons.check_circle,
-                                    color: Colors.white,
-                                  )
-                                ],
-                              )),
-                        ),
-                ],
+                                )
+                              : ConstrainedBox(
+                                  constraints:
+                                      const BoxConstraints(minHeight: 50.0),
+                                  child: ElevatedButton(
+                                      onPressed: () => checkoutVehicle(),
+                                      style: ButtonStyle(
+                                        backgroundColor:
+                                            WidgetStateProperty.all<Color>(
+                                                const Color.fromARGB(
+                                                    255, 3, 206, 108)),
+                                      ),
+                                      child: const Row(
+                                        children: [
+                                          Text(
+                                            "Check Out",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          SizedBox(width: 20.0),
+                                          Icon(
+                                            Icons.check_circle,
+                                            color: Colors.white,
+                                          )
+                                        ],
+                                      )),
+                                ),
+                        ],
+                      ),
+                    ),
+                    // const SizedBox(height: 20.0),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 40.0),
+            )
           ],
         ),
         // floatingActionButton: FloatingActionButton(
