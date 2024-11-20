@@ -99,4 +99,5 @@ type Vehicle struct {
 	CheckOutTime  sql.NullTime
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+	CardNumber    sql.NullString
 }

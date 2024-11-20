@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE service (
+CREATE TABLE IF NOT EXISTS service (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     date TIMESTAMP NOT NULL,
@@ -7,7 +7,7 @@ CREATE TABLE service (
     updated_at TIMESTAMP NOT NULL
 );
 
-CREATE TABLE parkingstation (
+CREATE TABLE IF NOT EXISTS parkingstation (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     codename VARCHAR(50) NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE parkingstation (
     updated_at TIMESTAMP NOT NULL
 );
 
-CREATE TABLE parkingsession (
+CREATE TABLE IF NOT EXISTS parkingsession (
     id SERIAL PRIMARY KEY,
     station_id INTEGER REFERENCES parkingstation(id) ON DELETE CASCADE NOT NULL,
     service_id INTEGER REFERENCES service(id) ON DELETE CASCADE NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE parkingsession (
     updated_at TIMESTAMP NOT NULL
 );
 
-CREATE TABLE department (
+CREATE TABLE IF NOT EXISTS department (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     codename VARCHAR(30) NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE department (
     updated_at TIMESTAMP NOT NULL
 );
 
-CREATE TABLE team_member (
+CREATE TABLE IF NOT EXISTS team_member (
     id SERIAL PRIMARY KEY,
     fullname VARCHAR(50) NOT NULL,
     codename VARCHAR(50) NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE team_member (
     updated_at TIMESTAMP NOT NULL
 );
 
-CREATE TABLE allocation (
+CREATE TABLE IF NOT EXISTS allocation (
     id SERIAL PRIMARY KEY,
     team_member_id INTEGER REFERENCES team_member(id) ON DELETE CASCADE NOT NULL,
     parking_id INTEGER REFERENCES parkingstation(id) ON DELETE CASCADE NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE allocation (
     updated_at TIMESTAMP NOT NULL
 );
 
-CREATE TABLE driver (
+CREATE TABLE IF NOT EXISTS driver (
     id SERIAL PRIMARY KEY,
     fullname VARCHAR(50) NOT NULL,
     phone_number VARCHAR(30) NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE driver (
     updated_at TIMESTAMP NOT NULL
 );
 
-CREATE TABLE vehicle (
+CREATE TABLE IF NOT EXISTS vehicle (
     id SERIAL PRIMARY KEY,
     driver_id INTEGER REFERENCES driver(id) ON DELETE CASCADE NOT NULL,
     license_number VARCHAR(10) NOT NULL,

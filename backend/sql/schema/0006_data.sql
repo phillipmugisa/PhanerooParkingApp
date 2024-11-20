@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE jwk_token (
+CREATE TABLE IF NOT EXISTS jwk_token (
     id SERIAL PRIMARY KEY,
     token VARCHAR(256) NOT NULL,
     team_member_id INTEGER REFERENCES team_member(id) ON DELETE CASCADE NOT NULL,

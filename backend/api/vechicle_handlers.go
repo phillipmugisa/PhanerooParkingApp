@@ -163,6 +163,7 @@ func (a *AppServer) RegisterVehicleHandler(ctx context.Context, w http.ResponseW
 	_, v_write_err := a.db.CreateVehicle(ctx, database.CreateVehicleParams{
 		DriverID:      int32(driver_id),
 		LicenseNumber: vehicleData.LicenseNo,
+		CardNumber:    sql.NullString{String: vehicleData.CardNumber, Valid: true},
 		Model:         sql.NullString{String: vehicleData.CarModel, Valid: true},
 		ServiceID:     int32(service.ID),
 		ParkingID:     int32(parking.ID),

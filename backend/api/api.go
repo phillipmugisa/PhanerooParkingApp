@@ -71,7 +71,8 @@ func (a *AppServer) registerRoutes(r *chi.Mux) {
 	r.Get("/service/{id}/vehicles", a.AuthedHandler(a.GetServiceVehicleHandler))
 	r.Get("/service/{id}/parkingstations", a.AuthedHandler(a.GetServiceParkingStationsHandler))
 
-	r.Get("/departments", a.AuthedHandler(a.ListDepartmentsHandler))
+	// r.Get("/departments", a.AuthedHandler(a.ListDepartmentsHandler))
+	r.Get("/departments", MakeApiHandler(a.ListDepartmentsHandler))
 	r.Get("/departments/{id}", a.AuthedHandler(a.GetDepartmentHandler))
 	r.Get("/departments/{id}/team", a.AuthedHandler(a.ListDepartmentTeamHandler))
 	r.Post("/departments/create", MakeApiHandler(a.CreateDepartmentHandler))

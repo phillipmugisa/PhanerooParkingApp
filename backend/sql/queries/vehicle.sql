@@ -21,8 +21,8 @@ SET fullname = $2, phone_number = $3,
 WHERE id = $1;
 
 -- name: CreateVehicle :execresult
-INSERT INTO vehicle(driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, created_at, updated_at)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
+INSERT INTO vehicle(driver_id, license_number, card_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
 
 -- name: DeleteVehicleById :exec
 DELETE FROM vehicle WHERE id = $1;
@@ -79,5 +79,5 @@ SELECT * FROM vehicle WHERE license_number = $1 AND created_at > $2 AND created_
 
 -- name: SearchVehicle :many
 SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id 
-WHERE vehicle.license_number LIKE '%'||$1||'%' OR driver.fullname LIKE '%'||$1||'%' 
+WHERE vehicle.license_number LIKE '%'||$1||'%' OR driver.fullname LIKE '%'||$1||'%' OR vehicle.card_number LIKE '%'||$1||'%' 
 ORDER BY vehicle.created_at DESC;

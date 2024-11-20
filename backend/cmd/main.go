@@ -14,7 +14,7 @@ func main() {
 	}
 
 	db, err := storage.InitDB()
-	if err != nil {
+	if err != nil || db == nil {
 		log.Fatal(err)
 	}
 	defer db.Close()

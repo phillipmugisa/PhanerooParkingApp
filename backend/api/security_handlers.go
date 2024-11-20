@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"github.com/phillipmugisa/PhanerooParkingApp/database"
 )
 
@@ -70,15 +69,16 @@ func (a *AppServer) CreateDepartmentHandler(ctx context.Context, w http.Response
 	defer r.Body.Close()
 
 	// generate code
-	accessCode := uuid.New().String()[:5]
-	_, f_err := a.db.GetDepartmentByCode(ctx, accessCode)
-	if f_err != nil {
-		if errors.Is(f_err, sql.ErrNoRows) {
-			accessCode = uuid.New().String()[:5]
-		} else {
-			return NewApiError("Operation was unsuccessful", http.StatusInternalServerError)
-		}
-	}
+	// accessCode := uuid.New().String()[:5]
+	// _, f_err := a.db.GetDepartmentByCode(ctx, accessCode)
+	// if f_err != nil {
+	// 	if errors.Is(f_err, sql.ErrNoRows) {
+	// 		accessCode = uuid.New().String()[:5]
+	// 	} else {
+	// 		return NewApiError("Operation was unsuccessful", http.StatusInternalServerError)
+	// 	}
+	// }
+	accessCode := "00000"
 
 	a.db.CreateDepartment(ctx, database.CreateDepartmentParams{
 		Name:       departmentData.Name,
