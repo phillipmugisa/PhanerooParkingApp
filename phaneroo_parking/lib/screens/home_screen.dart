@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:phaneroo_parking/requests.dart';
-import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:phaneroo_parking/requests.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,8 +22,10 @@ class _HomeScreenState extends State<HomeScreen> {
     userData = getCurrentUserRequest();
     getCurrentService().then((response) {
       var jsonData = json.decode(response.body);
-      currentServiceID = jsonData["ID"];
-      currentServiceData = jsonData;
+      setState(() {
+        currentServiceID = jsonData["ID"];
+        currentServiceData = jsonData;
+      });
     }).catchError((val) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -38,26 +40,93 @@ class _HomeScreenState extends State<HomeScreen> {
     int currentScreenIndex = 0;
     return SafeArea(
       child: Scaffold(
+        appBar: AppBar(
+          // Changed AppBar colors to green theme
+          backgroundColor: Colors.black,
+          elevation: 1,
+          title: const Row(
+            children: [
+              Icon(
+                Icons.local_parking,
+                color: Colors.white, // Changed to white for contrast
+                size: 20,
+              ),
+              SizedBox(width: 5),
+              Text(
+                "ParkMaster",
+                style: TextStyle(
+                  color: Colors.white, // Changed to white for contrast
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, "/account");
+              },
+              child: CircleAvatar(
+                backgroundColor: const Color.fromRGBO(
+                    242, 248, 252, 1), // Changed background color
+                child: Icon(
+                  Icons.person,
+                  size: 18.0,
+                  color: Colors.orange.shade700, // Changed to orange
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            IconButton(
+              onPressed: () {
+                logoutRequest().then((response) {
+                  if (response.statusCode >= 400) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Operation not successful'),
+                      ),
+                    );
+                    return;
+                  }
+                  SharedPreferences.getInstance().then((prefs) {
+                    prefs.remove("access_token");
+                    prefs.remove("refresh_token");
+                  });
+
+                  Navigator.popAndPushNamed(context, "/login");
+                }).catchError((err) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('No Internet connection'),
+                    ),
+                  );
+                });
+              },
+              icon: const Icon(Icons.logout,
+                  color: Colors.white), // Changed to white
+            ),
+            const SizedBox(width: 10),
+          ],
+        ),
         backgroundColor: Colors.white,
         body: FutureBuilder(
             future: userData,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox();
+                return const Center(child: CircularProgressIndicator());
               } else if (snapshot.hasError) {
                 Future.delayed(Duration.zero, () {
                   Navigator.pushNamed(context, '/login');
                 });
-                // Return an empty container while redirecting
                 return Container();
               } else if (snapshot.hasData) {
                 final statusCode = snapshot.data!.statusCode;
                 if (statusCode >= 400 && statusCode < 500) {
-                  // Handle client errors (e.g., unauthorized)
                   Future.delayed(Duration.zero, () {
                     Navigator.pushNamed(context, '/login');
                   });
-                  return Container(); // Return an empty container while redirecting
+                  return Container();
                 }
                 var jsonData = json.decode(snapshot.data!.body);
                 SharedPreferences.getInstance().then((prefs) {
@@ -69,9 +138,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 0),
                   children: [
-                    // TopPageActions(),
-                    // SizedBox(height: 10.0),
-                    // current user information
                     PersonnalDetails(
                         userData: jsonData,
                         currentServiceData: currentServiceData),
@@ -88,7 +154,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 Future.delayed(Duration.zero, () {
                   Navigator.pushNamed(context, '/login');
                 });
-                // Return an empty container while redirecting
                 return Container();
               }
             }),
@@ -109,34 +174,23 @@ class _HomeScreenState extends State<HomeScreen> {
               case 2:
                 Navigator.pushNamed(context, "/scan");
                 return;
-              // case 3:
-              //   Navigator.pushNamed(context, "/interactions");
-              //   return;
-              case 3:
-                Navigator.pushNamed(context, "/account");
-                return;
             }
           },
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.home),
+              icon:
+                  Icon(Icons.home, color: Colors.green.shade700), // Green icons
               label: "Home",
             ),
             NavigationDestination(
-              icon: Icon(Icons.list),
+              icon:
+                  Icon(Icons.list, color: Colors.green.shade700), // Green icons
               label: "Records",
             ),
             NavigationDestination(
-              icon: Icon(Icons.book),
+              icon:
+                  Icon(Icons.book, color: Colors.green.shade700), // Green icons
               label: "Register",
-            ),
-            // NavigationDestination(
-            //   icon: Icon(Icons.chat),
-            //   label: "Interactions",
-            // ),
-            NavigationDestination(
-              icon: Icon(Icons.account_circle),
-              label: "Account",
             ),
           ],
         ),
@@ -156,11 +210,21 @@ class TeamList extends StatefulWidget {
 
 class _TeamListState extends State<TeamList> {
   late Future departmentList;
+  bool isExpanded = true;
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  int _totalPages = 0;
 
   @override
   void initState() {
     super.initState();
     departmentList = listDepartmentTeamRequest(widget.userData["DepartmentID"]);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -170,125 +234,268 @@ class _TeamListState extends State<TeamList> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              vertical: 2.0,
-              horizontal: 2.0,
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Team Members",
-                  textAlign: TextAlign.left,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15.0,
-                  ),
+          InkWell(
+            onTap: () {
+              setState(() {
+                isExpanded = !isExpanded;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                vertical: 12.0,
+                horizontal: 12.0,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(10.0),
+                  topRight: const Radius.circular(10.0),
+                  bottomLeft: Radius.circular(isExpanded ? 0 : 10.0),
+                  bottomRight: Radius.circular(isExpanded ? 0 : 10.0),
                 ),
-                // TextButton(
-                //   onPressed: () {},
-                //   child: const Text(
-                //     "View All",
-                //     style: TextStyle(
-                //       fontWeight: FontWeight.w500,
-                //       fontSize: 12.0,
-                //       color: Colors.black87,
-                //     ),
-                //   ),
-                // )
-              ],
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Team Members",
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15.0,
+                    ),
+                  ),
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: Colors.black54,
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 5.0),
-          FutureBuilder(
-              future: departmentList,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox();
-                } else if (snapshot.hasError) {
-                  Future.delayed(Duration.zero, () {
-                    Navigator.pushNamed(context, '/login');
-                  });
-                  // Return an empty container while redirecting
-                  return Container();
-                } else if (snapshot.hasData) {
-                  var jsonData = json.decode(snapshot.data!.body);
-                  var groups = jsonData["results"] as List;
+          if (isExpanded)
+            FutureBuilder(
+                future: departmentList,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.all(14.0),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  } else if (snapshot.hasError) {
+                    return Container(
+                      padding: const EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(10.0),
+                          bottomRight: Radius.circular(10.0),
+                        ),
+                      ),
+                      child: const Text("Error loading team members"),
+                    );
+                  } else if (snapshot.hasData) {
+                    var jsonData = json.decode(snapshot.data!.body);
+                    var groups = jsonData["results"] as List;
 
-                  List<DataRow> team = groups
-                      .map((g) => DataRow(cells: [
-                            DataCell(Text(g["Codename"])),
-                            DataCell(
-                              FutureBuilder(
-                                future: getTeamMemberServiceAllocation(
-                                    g["ID"], widget.serviceID),
-                                builder: (context, snapshot) {
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return const Center(
-                                        child: SizedBox(
-                                      width: 0,
-                                    ));
-                                  } else if (snapshot.hasError) {
-                                    return Container();
-                                  } else if (snapshot.hasData) {
-                                    final statusCode =
-                                        snapshot.data!.statusCode;
-                                    if (statusCode >= 400 && statusCode < 500) {
-                                      return Container(); // Return an empty container while redirecting
-                                    }
-                                    var jsonData =
-                                        json.decode(snapshot.data!.body);
-                                    if (jsonData["Name"] == null) {
-                                      return Text(
-                                        "Not Deployed",
-                                        style: GoogleFonts.lato(
-                                          textStyle: const TextStyle(
-                                            fontSize: 14.0,
-                                            fontWeight: FontWeight.normal,
+                    // Calculate the total number of pages
+                    _totalPages = (groups.length / 5).ceil();
+
+                    if (groups.isEmpty) {
+                      return const Center(child: Text("No team members found"));
+                    } else {
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(10.0),
+                            bottomRight: Radius.circular(10.0),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            // PageView to enable swiping
+                            SizedBox(
+                              height: 300, // Adjust this height as needed
+                              child: PageView.builder(
+                                controller: _pageController,
+                                onPageChanged: (int page) {
+                                  setState(() {
+                                    _currentPage = page;
+                                  });
+                                },
+                                itemCount: _totalPages,
+                                itemBuilder: (context, pageIndex) {
+                                  // Calculate start and end indices for current page
+                                  int startIndex = pageIndex * 4;
+                                  int endIndex = startIndex + 4 > groups.length
+                                      ? groups.length
+                                      : startIndex + 4;
+                                  // Get subset of team members for this page
+                                  var pageMembers =
+                                      groups.sublist(startIndex, endIndex);
+
+                                  return Column(
+                                    children: pageMembers.map((g) {
+                                      return Container(
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            bottom: BorderSide(
+                                              color: Colors.grey.shade300,
+                                              width: 1.0,
+                                            ),
+                                          ),
+                                        ),
+                                        child: ListTile(
+                                          title: Text(
+                                            g["Codename"],
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w500),
+                                          ),
+                                          subtitle: Text(
+                                              "Phone: ${g["PhoneNumber"]}"),
+                                          trailing: FutureBuilder(
+                                            future:
+                                                getTeamMemberServiceAllocation(
+                                                    g["ID"], widget.serviceID),
+                                            builder: (context, snapshot) {
+                                              if (snapshot.connectionState ==
+                                                  ConnectionState.waiting) {
+                                                return const SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2.0,
+                                                  ),
+                                                );
+                                              } else if (snapshot.hasError) {
+                                                return const Text(
+                                                  "Error",
+                                                  style: TextStyle(
+                                                      color: Colors.red),
+                                                );
+                                              } else if (snapshot.hasData) {
+                                                var jsonData = json.decode(
+                                                    snapshot.data!.body);
+                                                final deployment =
+                                                    jsonData["Name"];
+                                                return Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 8.0,
+                                                    vertical: 4.0,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: deployment != null
+                                                        ? Colors.green.shade100
+                                                        : Colors.grey.shade200,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12.0),
+                                                    border: Border.all(
+                                                      color: deployment != null
+                                                          ? Colors
+                                                              .green.shade300
+                                                          : Colors
+                                                              .grey.shade400,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    deployment ??
+                                                        "Not Deployed",
+                                                    style: TextStyle(
+                                                      color: deployment != null
+                                                          ? Colors
+                                                              .green.shade800
+                                                          : Colors
+                                                              .grey.shade700,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      fontSize: 12.0,
+                                                    ),
+                                                  ),
+                                                );
+                                              } else {
+                                                return const Text("No Data");
+                                              }
+                                            },
                                           ),
                                         ),
                                       );
-                                    }
-
-                                    return Text(
-                                      jsonData["Name"],
-                                      style: GoogleFonts.lato(
-                                        textStyle: const TextStyle(
-                                          fontSize: 14.0,
-                                          fontWeight: FontWeight.normal,
-                                        ),
-                                      ),
-                                    );
-                                  } else {
-                                    return Container();
-                                  }
+                                    }).toList(),
+                                  );
                                 },
                               ),
                             ),
-                            // get allocation
-                            DataCell(Text(g["PhoneNumber"])),
-                          ]))
-                      .toList();
 
-                  return DataTable(
-                    border: TableBorder.all(color: Colors.grey.shade200),
-                    columns: const [
-                      DataColumn(label: Text("Code Name")),
-                      DataColumn(label: Text("Allocation")),
-                      DataColumn(label: Text("Tel No.")),
-                    ],
-                    rows: team,
-                  );
-                } else {
-                  Future.delayed(Duration.zero, () {
-                    Navigator.pushNamed(context, '/login');
-                  });
-                  // Return an empty container while redirecting
-                  return Container();
-                }
-              }),
+                            // Page indicator and navigation
+                            if (_totalPages > 1)
+                              Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Previous page button
+                                    IconButton(
+                                      onPressed: _currentPage > 0
+                                          ? () {
+                                              _pageController.previousPage(
+                                                duration: const Duration(
+                                                    milliseconds: 300),
+                                                curve: Curves.easeInOut,
+                                              );
+                                            }
+                                          : null,
+                                      icon: Icon(
+                                        Icons.arrow_back_ios,
+                                        color: _currentPage > 0
+                                            ? Colors.green.shade700
+                                            : Colors.grey.shade400,
+                                      ),
+                                    ),
+
+                                    // Page indicator text
+                                    Text(
+                                      "Page ${_currentPage + 1} of $_totalPages",
+                                      style: TextStyle(
+                                        color: Colors.green.shade700,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+
+                                    // Next page button
+                                    IconButton(
+                                      onPressed: _currentPage < _totalPages - 1
+                                          ? () {
+                                              _pageController.nextPage(
+                                                duration: const Duration(
+                                                    milliseconds: 300),
+                                                curve: Curves.easeInOut,
+                                              );
+                                            }
+                                          : null,
+                                      icon: Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: _currentPage < _totalPages - 1
+                                            ? Colors.green.shade700
+                                            : Colors.grey.shade400,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    }
+                  } else {
+                    return Container();
+                  }
+                }),
         ],
       ),
     );
@@ -305,6 +512,7 @@ class ParkingStats extends StatefulWidget {
 
 class _ParkingStatsState extends State<ParkingStats> {
   late Future currentServiceParkingStats;
+  int totalVehicles = 0;
 
   @override
   void initState() {
@@ -322,8 +530,16 @@ class _ParkingStatsState extends State<ParkingStats> {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(
-              vertical: 2.0,
-              horizontal: 2.0,
+              vertical: 12.0,
+              horizontal: 12.0,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(10.0),
+                topRight: Radius.circular(10.0),
+              ),
+              border: Border.all(color: Colors.grey.shade300),
             ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -336,70 +552,149 @@ class _ParkingStatsState extends State<ParkingStats> {
                     fontSize: 15.0,
                   ),
                 ),
-                // TextButton(
-                //   onPressed: () {},
-                //   child: const Text(
-                //     "View All",
-                //     style: TextStyle(
-                //       fontWeight: FontWeight.w500,
-                //       fontSize: 12.0,
-                //       color: Colors.black87,
-                //     ),
-                //   ),
-                // )
               ],
             ),
           ),
-          const SizedBox(height: 5.0),
           FutureBuilder(
             future: currentServiceParkingStats,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox();
+                return Container(
+                  height: 150,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(10.0),
+                      bottomRight: Radius.circular(10.0),
+                    ),
+                  ),
+                  child: const CircularProgressIndicator(),
+                );
               } else if (snapshot.hasError) {
-                Future.delayed(Duration.zero, () {
-                  Navigator.pushNamed(context, '/login');
-                });
-                // Return an empty container while redirecting
-                return Container();
+                return Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(10.0),
+                      bottomRight: Radius.circular(10.0),
+                    ),
+                  ),
+                  child: const Text("Error loading parking statistics"),
+                );
               } else if (snapshot.hasData) {
                 var jsonData = json.decode(snapshot.data!.body);
-                if (jsonData["results"] == null ||
-                    jsonData["results"] == Null) {
-                  return const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                var stats = jsonData["results"] as List;
+
+                // Calculate total vehicles
+                totalVehicles =
+                    stats.fold(0, (sum, item) => sum + (item["Count"] as int));
+
+                // Create color map by category
+                Map<String, Color> colorMap = {
+                  "Cars": Colors.blue,
+                  "Motorcycles": Colors.orange,
+                  "Bicycles": Colors.green,
+                  "Trucks": Colors.purple,
+                  "Buses": Colors.red,
+                  "Others": Colors.teal,
+                };
+
+                return Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(10.0),
+                      bottomRight: Radius.circular(10.0),
+                    ),
+                  ),
+                  child: Column(
                     children: [
-                      SizedBox(
-                        height: 20,
+                      // Total vehicles count
+                      Container(
+                        alignment: Alignment.center,
+                        margin: const EdgeInsets.only(bottom: 16.0),
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(8.0),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              totalVehicles.toString(),
+                              style: const TextStyle(
+                                fontSize: 24.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.indigo,
+                              ),
+                            ),
+                            const Text(
+                              "Total Vehicles",
+                              style: TextStyle(
+                                fontSize: 12.0,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      Text("No Vehicles registered yet for current Service.")
+
+                      // Progress indicators for each category
+                      ...stats.map((stat) {
+                        final percentage = totalVehicles > 0
+                            ? (stat["Count"] as int) / totalVehicles
+                            : 0.0;
+                        final categoryName = stat["Name"] as String;
+                        final defaultColor = Colors.grey;
+                        final color = colorMap[categoryName] ?? defaultColor;
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    categoryName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Text(
+                                    "${stat["Count"]} (${(percentage * 100).toStringAsFixed(1)}%)",
+                                    style: TextStyle(
+                                      color: color.withOpacity(0.8),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4.0),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4.0),
+                                child: LinearProgressIndicator(
+                                  value: percentage,
+                                  backgroundColor: color.withOpacity(0.2),
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(color),
+                                  minHeight: 6.0,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ],
-                  );
-                }
-                var groups = jsonData["results"] as List;
-
-                List<DataRow> groupings = groups
-                    .map((g) => DataRow(cells: [
-                          // DataCell(Text(g["Codename"])),
-                          DataCell(Text(g["Name"])),
-                          DataCell(Text(g["Count"].toString())),
-                        ]))
-                    .toList();
-
-                return DataTable(
-                  border: TableBorder.all(color: Colors.grey.shade300),
-                  columns: const [
-                    // DataColumn(label: Text("Parking")),
-                    DataColumn(label: Text("Name")),
-                    DataColumn(label: Text("Count")),
-                  ],
-                  rows: groupings,
+                  ),
                 );
               } else {
-                Future.delayed(Duration.zero, () {
-                  Navigator.pushNamed(context, '/login');
-                });
-                // Return an empty container while redirecting
                 return Container();
               }
             },
@@ -427,11 +722,14 @@ class _PersonnalDetailsState extends State<PersonnalDetails> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Card(
-          color: const Color.fromARGB(197, 203, 237, 250),
-          child: Container(
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          child: Padding(
             padding:
-                const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                const EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -446,7 +744,9 @@ class _PersonnalDetailsState extends State<PersonnalDetails> {
                 ),
                 const SizedBox(height: 2.5),
                 Text(
-                  'Welcome to ${widget.currentServiceData!["Name"]}',
+                  widget.currentServiceData != null
+                      ? 'Welcome to ${widget.currentServiceData!["Name"]}'
+                      : 'Welcome',
                   style: GoogleFonts.lato(
                     textStyle: const TextStyle(
                       fontSize: 20.0,
@@ -454,7 +754,7 @@ class _PersonnalDetailsState extends State<PersonnalDetails> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 2.5),
+                const SizedBox(height: 5.0),
                 Row(
                   children: [
                     Text(
@@ -466,100 +766,72 @@ class _PersonnalDetailsState extends State<PersonnalDetails> {
                         ),
                       ),
                     ),
-                    FutureBuilder(
-                      future: getTeamMemberServiceAllocation(
-                          widget.userData["ID"],
-                          widget.currentServiceData!["ID"]),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const SizedBox();
-                        } else if (snapshot.hasError) {
-                          return Container();
-                        } else if (snapshot.hasData) {
-                          final statusCode = snapshot.data!.statusCode;
-                          if (statusCode >= 400 && statusCode < 500) {
-                            return Container(); // Return an empty container while redirecting
-                          }
-                          var jsonData = json.decode(snapshot.data!.body);
-
-                          if (jsonData["Name"] == null) {
-                            return Text(
-                              "Not Deployed",
-                              style: GoogleFonts.lato(
-                                textStyle: const TextStyle(
-                                  fontSize: 16.0,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            );
-                          }
-
-                          SharedPreferences.getInstance().then((prefs) {
-                            prefs.setInt("parkingId", jsonData["ParkingID"]);
-                          });
-
-                          return Text(
-                            jsonData["Name"],
-                            style: GoogleFonts.lato(
-                              textStyle: const TextStyle(
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    widget.currentServiceData != null
+                        ? FutureBuilder(
+                            future: getTeamMemberServiceAllocation(
+                                widget.userData["ID"],
+                                widget.currentServiceData!["ID"]),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.0,
+                                  ),
+                                );
+                              } else if (snapshot.hasError) {
+                                return Container();
+                              } else if (snapshot.hasData) {
+                                var jsonData = json.decode(snapshot.data!.body);
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8.0,
+                                    vertical: 2.0,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: jsonData["Name"] != null
+                                        ? Colors.green.shade50
+                                        : Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(12.0),
+                                    border: Border.all(
+                                      color: jsonData["Name"] != null
+                                          ? Colors.green.shade300
+                                          : Colors.grey.shade400,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    jsonData["Name"] ?? "Not Deployed",
+                                    style: GoogleFonts.lato(
+                                      textStyle: TextStyle(
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: jsonData["Name"] != null
+                                            ? Colors.green.shade800
+                                            : Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                return const Text("Not Deployed");
+                              }
+                            },
+                          )
+                        : const Text(
+                            "Not Available",
+                            style: TextStyle(
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
                             ),
-                          );
-                        } else {
-                          return Container();
-                        }
-                      },
-                    ),
+                          ),
                   ],
                 ),
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class TopPageActions extends StatelessWidget {
-  const TopPageActions({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.mic),
-          color: Colors.white,
-          style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.all<Color>(Colors.black54)),
-        ),
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.record_voice_over),
-          color: Colors.white,
-          style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.all<Color>(Colors.black)),
-          constraints: const BoxConstraints(
-            minHeight: 100.0,
-            minWidth: 100.0,
-            maxHeight: 200.0,
-            maxWidth: 200.0,
-          ),
-        ),
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.volume_up_sharp),
-          color: Colors.white,
-          style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.all<Color>(Colors.black54)),
         ),
       ],
     );

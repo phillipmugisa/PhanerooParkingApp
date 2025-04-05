@@ -19,7 +19,7 @@ class ScanCarScreen extends StatefulWidget {
 class _ScanCarScreenState extends State<ScanCarScreen> {
   final RegExp pattern = RegExp(r'^[A-Z]{3}\s\d{3}[A-Z]$');
   int licenseNoLength = 8;
-  int currentScreenIndex = 3;
+  int currentScreenIndex = 2;
 
   int? currentServiceId;
   int? parkingId;
@@ -38,6 +38,8 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
   final TextEditingController driverNameController = TextEditingController();
   final TextEditingController telNumberController = TextEditingController();
   final TextEditingController cardNumberController = TextEditingController();
+
+  String _selectedVehicle = "car";
 
   void populateFields(String value) {
     final Future response = searchVehicles(value);
@@ -229,6 +231,71 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
           padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 0),
           children: [
             // CameraView(populateFields: populateFields),
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Row(
+                children: [
+                  // Car Selection Card
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedVehicle = "car";
+                        });
+                      },
+                      child: Card(
+                        color: _selectedVehicle == "car"
+                            ? Colors.blue.shade100
+                            : Colors.white,
+                        elevation: _selectedVehicle == "car" ? 5 : 2,
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.directions_car,
+                                  size: 50, color: Colors.blue),
+                              SizedBox(height: 8),
+                              Text("Car"),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10), // Space between cards
+                  // Bike Selection Card
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedVehicle = "bike";
+                        });
+                      },
+                      child: Card(
+                        color: _selectedVehicle == "bike"
+                            ? Colors.green.shade100
+                            : Colors.white,
+                        elevation: _selectedVehicle == "bike" ? 5 : 2,
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.pedal_bike,
+                                  size: 50, color: Colors.green),
+                              SizedBox(height: 8),
+                              Text("Bike"),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             Card(
               color: Colors.white,
               child: Container(
@@ -238,7 +305,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Enter Vehicle Registration Details",
+                      "Enter Vehicle Details",
                       style: GoogleFonts.lato(
                         textStyle: const TextStyle(
                           fontSize: 18.0,
@@ -483,12 +550,6 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
               case 2:
                 Navigator.pushNamed(context, "/scan");
                 return;
-              // case 3:
-              //   Navigator.pushNamed(context, "/interactions");
-              //   return;
-              case 3:
-                Navigator.pushNamed(context, "/account");
-                return;
             }
           },
           destinations: const [
@@ -503,14 +564,6 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
             NavigationDestination(
               icon: Icon(Icons.book),
               label: "Register",
-            ),
-            // NavigationDestination(
-            //   icon: Icon(Icons.chat),
-            //   label: "Interactions",
-            // ),
-            NavigationDestination(
-              icon: Icon(Icons.account_circle),
-              label: "Account",
             ),
           ],
         ),

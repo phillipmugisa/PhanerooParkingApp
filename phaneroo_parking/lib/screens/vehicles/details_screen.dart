@@ -508,12 +508,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
               case 2:
                 Navigator.pushNamed(context, "/scan");
                 return;
-              // case 3:
-              //   Navigator.pushNamed(context, "/interactions");
-              //   return;
-              case 3:
-                Navigator.pushNamed(context, "/account");
-                return;
             }
           },
           destinations: const [
@@ -528,14 +522,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
             NavigationDestination(
               icon: Icon(Icons.book),
               label: "Register",
-            ),
-            // NavigationDestination(
-            //   icon: Icon(Icons.chat),
-            //   label: "Interactions",
-            // ),
-            NavigationDestination(
-              icon: Icon(Icons.account_circle),
-              label: "Account",
             ),
           ],
         ),

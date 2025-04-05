@@ -60,6 +60,94 @@ class _ServiceScreenState extends State<ServiceScreen> {
 
     return SafeArea(
       child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          elevation: 1,
+          title: const Row(
+            children: [
+              Icon(
+                Icons.local_parking,
+                color: Colors.white,
+                size: 20,
+              ),
+              SizedBox(width: 5),
+              Text(
+                "ParkMaster",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            // Clickable User Avatar
+            GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, "/account");
+              },
+              child: CircleAvatar(
+                backgroundColor: Colors.grey.shade300,
+                child: const Icon(
+                  Icons.person, // Use any icon you prefer
+                  size: 18.0,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+
+            // Clickable Role Text
+            // GestureDetector(
+            //   onTap: () {
+            //     Navigator.pushNamed(context, "/");
+            //   },
+            //   child: const Text(
+            //     "Register",
+            //     style: TextStyle(
+            //       color: Colors.black,
+            //       fontSize: 14.0,
+            //       fontWeight: FontWeight.w500,
+            //     ),
+            //   ),
+            // ),
+            // const SizedBox(width: 15),
+
+            // Clickable Logout Icon
+            IconButton(
+              onPressed: () {
+                logoutRequest().then((response) {
+                  if (response.statusCode >= 400) {
+                    // not successful
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Operation now successful'),
+                      ),
+                    );
+                    return;
+                  }
+                  SharedPreferences.getInstance().then((prefs) {
+                    prefs.remove("access_token");
+                    prefs.remove("refresh_token");
+                  });
+
+                  Navigator.popAndPushNamed(context, "/login");
+                }).catchError(
+                  (err) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('No Internet connection'),
+                      ),
+                    );
+                  },
+                );
+              },
+              icon: Icon(Icons.logout, color: Colors.white),
+            ),
+            const SizedBox(width: 10),
+          ],
+        ),
         backgroundColor: Colors.white,
         body: Padding(
           padding: const EdgeInsets.all(10.0),
@@ -81,50 +169,6 @@ class _ServiceScreenState extends State<ServiceScreen> {
                   updateFunc: updateParkingList),
             ],
           ),
-        ),
-        bottomNavigationBar: NavigationBar(
-          backgroundColor: Colors.white,
-          indicatorColor: const Color.fromARGB(197, 203, 237, 250),
-          shadowColor: Colors.black87,
-          selectedIndex: currentScreenIndex,
-          onDestinationSelected: (int index) {
-            currentScreenIndex = index;
-            switch (index) {
-              case 0:
-                Navigator.pushNamed(context, "/");
-                return;
-              case 1:
-                Navigator.pushNamed(context, "/records");
-                return;
-              case 2:
-                Navigator.pushNamed(context, "/leaderboard");
-                return;
-              // case 3:
-              //   Navigator.pushNamed(context, "/interactions");
-              //   return;
-              case 3:
-                Navigator.pushNamed(context, "/account");
-                return;
-            }
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home),
-              label: "Home",
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.list),
-              label: "Reocrds",
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.book),
-              label: "Services",
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.account_circle),
-              label: "Account",
-            ),
-          ],
         ),
       ),
     );

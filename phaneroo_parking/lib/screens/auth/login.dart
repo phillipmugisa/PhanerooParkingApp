@@ -15,6 +15,8 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController codeNameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
+  bool _obscureText = true;
+
   Future<void> loginUser() async {
     var data = <String, dynamic>{
       'codename': codeNameController.text,
@@ -40,11 +42,18 @@ class _LoginPageState extends State<LoginPage> {
 
     loginRequest(data).then((response) {
       if (response.statusCode > 399) {
+        // Decode the JSON response
+        Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+        // Access the "error" field safely
+        String errorMessage =
+            responseBody["error"] ?? "An unknown error occurred";
+
         showDialog<String>(
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Error'),
-            content: const Text('Please confirm your data'),
+            content: Text(errorMessage),
             actions: <Widget>[
               TextButton(
                 onPressed: () => Navigator.pop(context, 'OK'),
@@ -137,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
               TextFormField(
                 controller: passwordController,
                 maxLines: 1,
-                obscureText: true,
+                obscureText: _obscureText,
                 decoration: InputDecoration(
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.password),
@@ -149,26 +158,36 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureText ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureText = !_obscureText; // Toggle visibility
+                      });
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 10.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      "Forget Password?",
-                      style: GoogleFonts.lato(
-                        textStyle: const TextStyle(
-                          fontSize: 14.0,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.end,
+              //   children: [
+              //     TextButton(
+              //       onPressed: () {},
+              //       child: Text(
+              //         "Forget Password?",
+              //         style: GoogleFonts.lato(
+              //           textStyle: const TextStyle(
+              //             fontSize: 14.0,
+              //             color: Colors.black87,
+              //           ),
+              //         ),
+              //       ),
+              //     ),
+              //   ],
+              // ),
               const SizedBox(height: 15.0),
               GestureDetector(
                 onTap: () => loginUser(),

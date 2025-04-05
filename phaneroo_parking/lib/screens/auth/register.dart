@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phaneroo_parking/requests.dart';
@@ -17,6 +18,8 @@ class RegisterPageState extends State<RegisterPage> {
   TextEditingController accessCodeController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
+
+  bool _obscureText = true;
 
   Future<void> registerUser() async {
     var data = <String, dynamic>{
@@ -48,11 +51,18 @@ class RegisterPageState extends State<RegisterPage> {
 
     registerUserRequest(data).then((response) {
       if (response.statusCode > 399) {
+        // Decode the JSON response
+        Map<String, dynamic> responseBody = jsonDecode(response.body);
+
+        // Access the "error" field safely
+        String errorMessage =
+            responseBody["error"] ?? "An unknown error occurred";
+
         showDialog<String>(
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Error'),
-            content: const Text('Please confirm your data'),
+            content: Text(errorMessage),
             actions: <Widget>[
               TextButton(
                 onPressed: () => Navigator.pop(context, 'OK'),
@@ -65,6 +75,7 @@ class RegisterPageState extends State<RegisterPage> {
         Navigator.popAndPushNamed(context, "/login");
       }
     }).catchError((err) {
+      print(err);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Connection Difficulty'),
@@ -179,7 +190,7 @@ class RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: passwordController,
                   maxLines: 1,
-                  obscureText: true,
+                  obscureText: _obscureText,
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
                     label: Text(
@@ -189,6 +200,16 @@ class RegisterPageState extends State<RegisterPage> {
                           fontSize: 16.0,
                         ),
                       ),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureText ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureText = !_obscureText; // Toggle visibility
+                        });
+                      },
                     ),
                   ),
                 ),
