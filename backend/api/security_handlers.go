@@ -323,6 +323,7 @@ func (a *AppServer) CreateServicerHandler(ctx context.Context, w http.ResponseWr
 					ServiceID: int32(results[1].ID),
 					ParkingID: int32(parking.ID),
 				})
+
 				if fetch_err == nil {
 					for _, allocation := range allocations {
 						_, write_err := a.db.CreateAllocation(ctx, database.CreateAllocationParams{
