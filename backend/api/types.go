@@ -132,9 +132,11 @@ type ParkingStationData struct {
 }
 
 type ServiceData struct {
-	Name string    `json:"name"`
-	Date time.Time `json:"date"`
-	Time time.Time `json:"time"`
+	Name               string    `json:"name"`
+	Date               time.Time `json:"date"`
+	Time               time.Time `json:"time"`
+	IsActive           bool      `json:"is_active"`
+	AllocationAsBefore bool      `json:"allocation_as_before"`
 }
 
 type AllocationData struct {

@@ -70,6 +70,7 @@ type Service struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Time      sql.NullTime
+	IsActive  sql.NullBool
 }
 
 type TeamMember struct {
@@ -100,4 +101,6 @@ type Vehicle struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	CardNumber    sql.NullString
+	CheckedInBy   int32
+	CheckedOutBy  int32
 }

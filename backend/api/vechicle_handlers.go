@@ -83,13 +83,19 @@ func (a *AppServer) UpdateVehiclesHandler(ctx context.Context, w http.ResponseWr
 		return NewApiError("Unable to access record", http.StatusBadRequest)
 	}
 
+	location, err := time.LoadLocation("Africa/Kampala")
+	if err != nil {
+		// Handle error loading timezone
+		return NewApiError("Unable to get time zone", http.StatusBadRequest)
+	}
+
 	// update driver details
 	update_err := a.db.UpdateDriver(ctx, database.UpdateDriverParams{
 		ID:          vehicle.DriverID,
 		Fullname:    vehicleData.DriverName,
 		PhoneNumber: vehicleData.DriverTelNo,
 		Email:       sql.NullString{String: vehicleData.DriverEmail, Valid: true},
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().In(location),
 	})
 	if update_err != nil {
 		return NewApiError("Unable to update data", http.StatusInternalServerError)
@@ -102,7 +108,7 @@ func (a *AppServer) UpdateVehiclesHandler(ctx context.Context, w http.ResponseWr
 		LicenseNumber: vehicleData.LicenseNo,
 		Model:         sql.NullString{String: vehicleData.CarModel, Valid: true},
 		SecurityNotes: sql.NullString{String: vehicleData.SecurityNote, Valid: true},
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().In(location),
 	})
 	if u_err != nil {
 		return NewApiError("Unable to update data", http.StatusInternalServerError)
@@ -123,15 +129,21 @@ func (a *AppServer) RegisterVehicleHandler(ctx context.Context, w http.ResponseW
 	// confirm that the parking and service id exists
 	service, err := a.db.GetService(ctx, int32(vehicleData.ServiceId))
 	if err != nil {
-		return NewApiError("Error fetching record", http.StatusBadRequest)
+		return NewApiError("Unable to found specified service ", http.StatusBadRequest)
+	}
+
+	location, err := time.LoadLocation("Africa/Kampala")
+	if err != nil {
+		// Handle error loading timezone
+		return NewApiError("Unable to get time zone", http.StatusBadRequest)
 	}
 
 	// check if this vehicle has has already been registered in this service
 	// arguments: license plate, date
 	vehicles, f_err := a.db.GetVehiclesExisting(ctx, database.GetVehiclesExistingParams{
 		LicenseNumber: vehicleData.LicenseNo,
-		CreatedAt:     time.Now().Add(-(24 * time.Hour)), // day before
-		CreatedAt_2:   time.Now(),
+		CreatedAt:     time.Now().In(location).Add(-(24 * time.Hour)), // day before
+		CreatedAt_2:   time.Now().In(location),
 		ServiceID:     service.ID,
 	})
 	if f_err != nil {
@@ -146,8 +158,8 @@ func (a *AppServer) RegisterVehicleHandler(ctx context.Context, w http.ResponseW
 		Fullname:    vehicleData.DriverName,
 		PhoneNumber: vehicleData.DriverTelNo,
 		Email:       sql.NullString{String: vehicleData.DriverEmail},
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		CreatedAt:   time.Now().In(location),
+		UpdatedAt:   time.Now().In(location),
 	})
 	if err != nil {
 		return NewApiError("Unable to store driver data", http.StatusBadRequest)
@@ -169,9 +181,9 @@ func (a *AppServer) RegisterVehicleHandler(ctx context.Context, w http.ResponseW
 		ParkingID:     int32(parking.ID),
 		IsCheckedOut:  sql.NullBool{Bool: false, Valid: true},
 		SecurityNotes: sql.NullString{String: vehicleData.SecurityNote, Valid: true},
-		CheckInTime:   sql.NullTime{Time: time.Now(), Valid: true},
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
+		CheckInTime:   sql.NullTime{Time: time.Now().In(location), Valid: true},
+		CreatedAt:     time.Now().In(location),
+		UpdatedAt:     time.Now().In(location),
 	})
 	if v_write_err != nil {
 		return NewApiError("Unable to store vehicle data", http.StatusBadRequest)
@@ -192,9 +204,15 @@ func (a *AppServer) CheckoutVehiclesHandler(ctx context.Context, w http.Response
 		return NewApiError("Unable to access record", http.StatusBadRequest)
 	}
 
+	location, err := time.LoadLocation("Africa/Kampala")
+	if err != nil {
+		// Handle error loading timezone
+		return NewApiError("Unable to get time zone", http.StatusBadRequest)
+	}
+
 	update_err := a.db.CheckoutVehicle(ctx, database.CheckoutVehicleParams{
 		ID:           vehicle.ID,
-		CheckOutTime: sql.NullTime{Time: time.Now(), Valid: true},
+		CheckOutTime: sql.NullTime{Time: time.Now().In(location), Valid: true},
 		IsCheckedOut: sql.NullBool{Bool: true, Valid: true},
 	})
 	if update_err != nil {

@@ -145,7 +145,7 @@ func (q *Queries) GetDriverByName(ctx context.Context, fullname string) (Driver,
 }
 
 const getVehicleById = `-- name: GetVehicleById :one
-SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.id = $1
+SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, checked_in_by, checked_out_by, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.id = $1
 `
 
 type GetVehicleByIdRow struct {
@@ -162,6 +162,8 @@ type GetVehicleByIdRow struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	CardNumber    sql.NullString
+	CheckedInBy   int32
+	CheckedOutBy  int32
 	ID_2          int32
 	Fullname      string
 	PhoneNumber   string
@@ -187,6 +189,8 @@ func (q *Queries) GetVehicleById(ctx context.Context, id int32) (GetVehicleByIdR
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.CardNumber,
+		&i.CheckedInBy,
+		&i.CheckedOutBy,
 		&i.ID_2,
 		&i.Fullname,
 		&i.PhoneNumber,
@@ -198,7 +202,7 @@ func (q *Queries) GetVehicleById(ctx context.Context, id int32) (GetVehicleByIdR
 }
 
 const getVehiclesByDriver = `-- name: GetVehiclesByDriver :many
-SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.driver_id = $1
+SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, checked_in_by, checked_out_by, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.driver_id = $1
 `
 
 type GetVehiclesByDriverRow struct {
@@ -215,6 +219,8 @@ type GetVehiclesByDriverRow struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	CardNumber    sql.NullString
+	CheckedInBy   int32
+	CheckedOutBy  int32
 	ID_2          int32
 	Fullname      string
 	PhoneNumber   string
@@ -246,6 +252,8 @@ func (q *Queries) GetVehiclesByDriver(ctx context.Context, driverID int32) ([]Ge
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.CardNumber,
+			&i.CheckedInBy,
+			&i.CheckedOutBy,
 			&i.ID_2,
 			&i.Fullname,
 			&i.PhoneNumber,
@@ -267,7 +275,7 @@ func (q *Queries) GetVehiclesByDriver(ctx context.Context, driverID int32) ([]Ge
 }
 
 const getVehiclesByLicense = `-- name: GetVehiclesByLicense :many
-SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.license_number = $1
+SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, checked_in_by, checked_out_by, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.license_number = $1
 `
 
 type GetVehiclesByLicenseRow struct {
@@ -284,6 +292,8 @@ type GetVehiclesByLicenseRow struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	CardNumber    sql.NullString
+	CheckedInBy   int32
+	CheckedOutBy  int32
 	ID_2          int32
 	Fullname      string
 	PhoneNumber   string
@@ -315,6 +325,8 @@ func (q *Queries) GetVehiclesByLicense(ctx context.Context, licenseNumber string
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.CardNumber,
+			&i.CheckedInBy,
+			&i.CheckedOutBy,
 			&i.ID_2,
 			&i.Fullname,
 			&i.PhoneNumber,
@@ -336,7 +348,7 @@ func (q *Queries) GetVehiclesByLicense(ctx context.Context, licenseNumber string
 }
 
 const getVehiclesByParking = `-- name: GetVehiclesByParking :many
-SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.parking_id = $1
+SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, checked_in_by, checked_out_by, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.parking_id = $1
 `
 
 type GetVehiclesByParkingRow struct {
@@ -353,6 +365,8 @@ type GetVehiclesByParkingRow struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	CardNumber    sql.NullString
+	CheckedInBy   int32
+	CheckedOutBy  int32
 	ID_2          int32
 	Fullname      string
 	PhoneNumber   string
@@ -384,6 +398,8 @@ func (q *Queries) GetVehiclesByParking(ctx context.Context, parkingID int32) ([]
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.CardNumber,
+			&i.CheckedInBy,
+			&i.CheckedOutBy,
 			&i.ID_2,
 			&i.Fullname,
 			&i.PhoneNumber,
@@ -405,7 +421,7 @@ func (q *Queries) GetVehiclesByParking(ctx context.Context, parkingID int32) ([]
 }
 
 const getVehiclesByService = `-- name: GetVehiclesByService :many
-SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.service_id = $1
+SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, checked_in_by, checked_out_by, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.service_id = $1
 `
 
 type GetVehiclesByServiceRow struct {
@@ -422,6 +438,8 @@ type GetVehiclesByServiceRow struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	CardNumber    sql.NullString
+	CheckedInBy   int32
+	CheckedOutBy  int32
 	ID_2          int32
 	Fullname      string
 	PhoneNumber   string
@@ -453,6 +471,8 @@ func (q *Queries) GetVehiclesByService(ctx context.Context, serviceID int32) ([]
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.CardNumber,
+			&i.CheckedInBy,
+			&i.CheckedOutBy,
 			&i.ID_2,
 			&i.Fullname,
 			&i.PhoneNumber,
@@ -474,7 +494,7 @@ func (q *Queries) GetVehiclesByService(ctx context.Context, serviceID int32) ([]
 }
 
 const getVehiclesExisting = `-- name: GetVehiclesExisting :many
-SELECT id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, created_at, updated_at, card_number FROM vehicle WHERE license_number = $1 AND created_at > $2 AND created_at < $3 AND service_id = $4
+SELECT id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, created_at, updated_at, card_number, checked_in_by, checked_out_by FROM vehicle WHERE license_number = $1 AND created_at > $2 AND created_at < $3 AND service_id = $4
 `
 
 type GetVehiclesExistingParams struct {
@@ -512,6 +532,8 @@ func (q *Queries) GetVehiclesExisting(ctx context.Context, arg GetVehiclesExisti
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.CardNumber,
+			&i.CheckedInBy,
+			&i.CheckedOutBy,
 		); err != nil {
 			return nil, err
 		}
@@ -636,7 +658,7 @@ func (q *Queries) ListDriver(ctx context.Context) ([]Driver, error) {
 }
 
 const listVehicle = `-- name: ListVehicle :many
-SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id ORDER BY vehicle.ID DESC
+SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, checked_in_by, checked_out_by, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id ORDER BY vehicle.ID DESC
 `
 
 type ListVehicleRow struct {
@@ -653,6 +675,8 @@ type ListVehicleRow struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	CardNumber    sql.NullString
+	CheckedInBy   int32
+	CheckedOutBy  int32
 	ID_2          int32
 	Fullname      string
 	PhoneNumber   string
@@ -684,6 +708,8 @@ func (q *Queries) ListVehicle(ctx context.Context) ([]ListVehicleRow, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.CardNumber,
+			&i.CheckedInBy,
+			&i.CheckedOutBy,
 			&i.ID_2,
 			&i.Fullname,
 			&i.PhoneNumber,
@@ -705,7 +731,7 @@ func (q *Queries) ListVehicle(ctx context.Context) ([]ListVehicleRow, error) {
 }
 
 const searchVehicle = `-- name: SearchVehicle :many
-SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id 
+SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, checked_in_by, checked_out_by, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id 
 WHERE vehicle.license_number LIKE '%'||$1||'%' OR driver.fullname LIKE '%'||$1||'%' OR vehicle.card_number LIKE '%'||$1||'%' 
 ORDER BY vehicle.created_at DESC
 `
@@ -724,6 +750,8 @@ type SearchVehicleRow struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	CardNumber    sql.NullString
+	CheckedInBy   int32
+	CheckedOutBy  int32
 	ID_2          int32
 	Fullname      string
 	PhoneNumber   string
@@ -755,6 +783,8 @@ func (q *Queries) SearchVehicle(ctx context.Context, dollar_1 sql.NullString) ([
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.CardNumber,
+			&i.CheckedInBy,
+			&i.CheckedOutBy,
 			&i.ID_2,
 			&i.Fullname,
 			&i.PhoneNumber,

@@ -8,9 +8,12 @@ SELECT * FROM service ORDER BY ID DESC;
 -- name: GetService :one
 SELECT * FROM service WHERE id = $1;
 
+-- name: GetCurrentService :many
+SELECT * FROM service WHERE is_active = TRUE;
+
 -- name: UpdateService :exec
 UPDATE service 
-SET name = $2, date = $3
+SET name = $2, date = $3, is_active = $4 
 WHERE id = $1;
 
 

@@ -80,12 +80,18 @@ func (a *AppServer) CreateDepartmentHandler(ctx context.Context, w http.Response
 	// }
 	accessCode := "00000"
 
+	location, location_err := time.LoadLocation("Africa/Kampala")
+	if location_err != nil {
+		// Handle error loading timezone
+		return NewApiError("Unable to get time zone", http.StatusBadRequest)
+	}
+
 	a.db.CreateDepartment(ctx, database.CreateDepartmentParams{
 		Name:       departmentData.Name,
 		Codename:   departmentData.Codename,
 		Accesscode: sql.NullString{String: accessCode, Valid: true},
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+		CreatedAt:  time.Now().In(location),
+		UpdatedAt:  time.Now().In(location),
 	})
 
 	return RespondWithJSON(w, http.StatusCreated, struct{}{})
@@ -125,12 +131,18 @@ func (a *AppServer) CreateParkingSessionHandler(ctx context.Context, w http.Resp
 		return NewApiError("Invalid data provided", http.StatusBadRequest)
 	}
 
+	location, location_err := time.LoadLocation("Africa/Kampala")
+	if location_err != nil {
+		// Handle error loading timezone
+		return NewApiError("Unable to get time zone", http.StatusBadRequest)
+	}
+
 	_, write_err := a.db.CreateParkingSession(ctx, database.CreateParkingSessionParams{
 		StationID: station.ID,
 		ServiceID: service.ID,
 		Report:    sql.NullString{String: parkingSessionData.Report, Valid: true},
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().In(location),
+		UpdatedAt: time.Now().In(location),
 	})
 	if write_err != nil {
 		return NewApiError("Unable to store data", http.StatusInternalServerError)
@@ -166,11 +178,17 @@ func (a *AppServer) CreateParkingStationHandler(ctx context.Context, w http.Resp
 	}
 	defer r.Body.Close()
 
+	location, location_err := time.LoadLocation("Africa/Kampala")
+	if location_err != nil {
+		// Handle error loading timezone
+		return NewApiError("Unable to get time zone", http.StatusBadRequest)
+	}
+
 	_, write_err := a.db.CreateParkingStation(ctx, database.CreateParkingStationParams{
 		Name:      parkingStationData.Name,
 		Codename:  parkingStationData.Codename,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().In(location),
+		UpdatedAt: time.Now().In(location),
 	})
 	if write_err != nil {
 		return NewApiError("Unable to store data", http.StatusInternalServerError)
@@ -243,7 +261,7 @@ func (a *AppServer) ListServicerHandler(ctx context.Context, w http.ResponseWrit
 }
 
 func (a *AppServer) GetCurrentServicerHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
-	results, err := a.db.ListService(ctx)
+	results, err := a.db.GetCurrentService(ctx)
 	if err != nil {
 		return NewApiError("Error fetching record", http.StatusInternalServerError)
 	}
@@ -263,12 +281,18 @@ func (a *AppServer) CreateServicerHandler(ctx context.Context, w http.ResponseWr
 	}
 	defer r.Body.Close()
 
-	_, write_err := a.db.CreateService(ctx, database.CreateServiceParams{
+	location, location_err := time.LoadLocation("Africa/Kampala")
+	if location_err != nil {
+		// Handle error loading timezone
+		return NewApiError("Unable to get time zone", http.StatusBadRequest)
+	}
+
+	service_creation_result, write_err := a.db.CreateService(ctx, database.CreateServiceParams{
 		Name:      serviceData.Name,
 		Date:      serviceData.Date,
 		Time:      sql.NullTime{Time: serviceData.Time, Valid: true},
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().In(location),
+		UpdatedAt: time.Now().In(location),
 	})
 	if write_err != nil {
 		return NewApiError("Unable to store data", http.StatusInternalServerError)
@@ -277,6 +301,49 @@ func (a *AppServer) CreateServicerHandler(ctx context.Context, w http.ResponseWr
 	results, err := a.db.ListService(ctx)
 	if err != nil {
 		return NewApiError("Error fetching record", http.StatusInternalServerError)
+	}
+
+	if serviceData.AllocationAsBefore {
+		// get parking station and allocation of the service before the created one and make the same to the created service
+		new_service_id, err := service_creation_result.LastInsertId()
+		if err == nil {
+
+			// stations
+			last_service_parkings, _ := a.db.ListServiceParkingStations(ctx, int32(results[1].ID))
+			// in case of error, user will have to create allocations manually
+			for _, parking := range last_service_parkings {
+				// create on new service
+				_, write_err := a.db.CreateParkingSession(ctx, database.CreateParkingSessionParams{
+					StationID: parking.ID,
+					ServiceID: int32(new_service_id),
+					CreatedAt: time.Now().In(location),
+					UpdatedAt: time.Now().In(location),
+				})
+				if write_err == nil {
+					// add allocation
+					allocations, fetch_err := a.db.ListServiceParkingAllocation(ctx, database.ListServiceParkingAllocationParams{
+						ServiceID: int32(new_service_id),
+						ParkingID: int32(parking.ID),
+					})
+					if fetch_err == nil {
+						for _, allocation := range allocations {
+							_, write_err := a.db.CreateAllocation(ctx, database.CreateAllocationParams{
+								TeamMemberID: int32(allocation.Teammemberid),
+								ParkingID:    int32(parking.ID),
+								ServiceID:    int32(new_service_id),
+								CreatedAt:    time.Now().In(location),
+								UpdatedAt:    time.Now().In(location),
+							})
+							if write_err != nil {
+								return NewApiError("Unable to store data", http.StatusInternalServerError)
+							}
+						}
+					}
+				}
+
+			}
+
+		}
 	}
 
 	return RespondWithJSON(w, http.StatusCreated, results[0])
@@ -308,11 +375,34 @@ func (a *AppServer) UpdateServiceHandler(ctx context.Context, w http.ResponseWri
 	}
 	defer r.Body.Close()
 
+	// only one service can be active
+	if serviceData.IsActive {
+		results, err := a.db.GetCurrentService(ctx)
+		if err != nil {
+			return NewApiError("Error fetching record", http.StatusInternalServerError)
+		}
+		for _, service := range results {
+			a.db.UpdateService(ctx, database.UpdateServiceParams{
+				ID:   int32(service.ID),
+				Name: service.Name,
+				Date: service.Date,
+				IsActive: sql.NullBool{
+					Bool:  false,
+					Valid: true, // Set to true since we have a value
+				},
+			})
+		}
+	}
+
 	// update details
 	u_err := a.db.UpdateService(ctx, database.UpdateServiceParams{
 		ID:   int32(serviceId),
 		Name: serviceData.Name,
 		Date: serviceData.Date,
+		IsActive: sql.NullBool{
+			Bool:  serviceData.IsActive,
+			Valid: true, // Set to true since we have a value
+		},
 	})
 	if u_err != nil {
 		return NewApiError("Unable to update data", http.StatusInternalServerError)
@@ -369,12 +459,18 @@ func (a *AppServer) CreateAllocationHandler(ctx context.Context, w http.Response
 	}
 	defer r.Body.Close()
 
+	location, location_err := time.LoadLocation("Africa/Kampala")
+	if location_err != nil {
+		// Handle error loading timezone
+		return NewApiError("Unable to get time zone", http.StatusBadRequest)
+	}
+
 	_, write_err := a.db.CreateAllocation(ctx, database.CreateAllocationParams{
 		TeamMemberID: int32(allocationData.TeamMemberId),
 		ParkingID:    int32(allocationData.ParkingId),
 		ServiceID:    int32(allocationData.ServiceId),
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		CreatedAt:    time.Now().In(location),
+		UpdatedAt:    time.Now().In(location),
 	})
 	if write_err != nil {
 		return NewApiError("Unable to store data", http.StatusInternalServerError)
