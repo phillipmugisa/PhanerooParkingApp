@@ -305,42 +305,38 @@ func (a *AppServer) CreateServicerHandler(ctx context.Context, w http.ResponseWr
 
 	if serviceData.AllocationAsBefore {
 		// get parking station and allocation of the service before the created one and make the same to the created service
-		new_service_id, err := service_creation_result.LastInsertId()
-		if err == nil {
 
-			// stations
-			last_service_parkings, _ := a.db.ListServiceParkingStations(ctx, int32(results[1].ID))
-			// in case of error, user will have to create allocations manually
-			for _, parking := range last_service_parkings {
-				// create on new service
-				_, write_err := a.db.CreateParkingSession(ctx, database.CreateParkingSessionParams{
-					StationID: parking.ID,
-					ServiceID: int32(new_service_id),
-					CreatedAt: time.Now().In(location),
-					UpdatedAt: time.Now().In(location),
+		// stations
+		last_service_parkings, _ := a.db.ListServiceParkingStations(ctx, int32(results[1].ID))
+		// in case of error, user will have to create allocations manually
+		for _, parking := range last_service_parkings {
+			// create on new service
+			_, write_err := a.db.CreateParkingSession(ctx, database.CreateParkingSessionParams{
+				StationID: parking.ID,
+				ServiceID: int32(results[1].ID),
+				CreatedAt: time.Now().In(location),
+				UpdatedAt: time.Now().In(location),
+			})
+			if write_err == nil {
+				// add allocation
+				allocations, fetch_err := a.db.ListServiceParkingAllocation(ctx, database.ListServiceParkingAllocationParams{
+					ServiceID: int32(results[1].ID),
+					ParkingID: int32(parking.ID),
 				})
-				if write_err == nil {
-					// add allocation
-					allocations, fetch_err := a.db.ListServiceParkingAllocation(ctx, database.ListServiceParkingAllocationParams{
-						ServiceID: int32(new_service_id),
-						ParkingID: int32(parking.ID),
-					})
-					if fetch_err == nil {
-						for _, allocation := range allocations {
-							_, write_err := a.db.CreateAllocation(ctx, database.CreateAllocationParams{
-								TeamMemberID: int32(allocation.Teammemberid),
-								ParkingID:    int32(parking.ID),
-								ServiceID:    int32(new_service_id),
-								CreatedAt:    time.Now().In(location),
-								UpdatedAt:    time.Now().In(location),
-							})
-							if write_err != nil {
-								return NewApiError("Unable to store data", http.StatusInternalServerError)
-							}
+				if fetch_err == nil {
+					for _, allocation := range allocations {
+						_, write_err := a.db.CreateAllocation(ctx, database.CreateAllocationParams{
+							TeamMemberID: int32(allocation.Teammemberid),
+							ParkingID:    int32(parking.ID),
+							ServiceID:    int32(results[1].ID),
+							CreatedAt:    time.Now().In(location),
+							UpdatedAt:    time.Now().In(location),
+						})
+						if write_err != nil {
+							return NewApiError("Unable to store data", http.StatusInternalServerError)
 						}
 					}
 				}
-
 			}
 
 		}
