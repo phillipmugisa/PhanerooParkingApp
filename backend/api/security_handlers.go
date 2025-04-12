@@ -287,7 +287,7 @@ func (a *AppServer) CreateServicerHandler(ctx context.Context, w http.ResponseWr
 		return NewApiError("Unable to get time zone", http.StatusBadRequest)
 	}
 
-	service_creation_result, write_err := a.db.CreateService(ctx, database.CreateServiceParams{
+	_, write_err := a.db.CreateService(ctx, database.CreateServiceParams{
 		Name:      serviceData.Name,
 		Date:      serviceData.Date,
 		Time:      sql.NullTime{Time: serviceData.Time, Valid: true},
