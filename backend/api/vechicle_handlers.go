@@ -165,6 +165,8 @@ func (a *AppServer) RegisterVehicleHandler(ctx context.Context, w http.ResponseW
 		return NewApiError("Error fetching record", http.StatusBadRequest)
 	}
 
+	fmt.Printf("\n\nCheckedInBy: %v", vehicleData.CheckedInBy)
+
 	// register vehicle
 	_, v_write_err := a.db.CreateVehicle(ctx, database.CreateVehicleParams{
 		DriverID:      int32(driver_id),
