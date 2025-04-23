@@ -8,6 +8,12 @@ SELECT * FROM service ORDER BY ID DESC;
 -- name: GetService :one
 SELECT * FROM service WHERE id = $1;
 
+-- name: DeleteService :execresult
+DELETE FROM service where id = $1;
+
+-- name: GetServiceWithName :one
+SELECT * FROM service WHERE name LIKE '%' || $1 || '%';
+
 -- name: GetCurrentService :many
 SELECT * FROM service WHERE is_active = TRUE;
 
@@ -96,7 +102,7 @@ JOIN service ON service_id = service_id.id;
 -- name: ListServiceAllocation :many
 SELECT * FROM allocation 
 JOIN parkingstation ON parking_id = parkingstation.id 
-JOIN service ON service_id = service_id.id 
+JOIN service ON allocation.service_id = service.id
 WHERE service_id = $1;
 
 

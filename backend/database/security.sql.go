@@ -165,6 +165,14 @@ func (q *Queries) DeleteAllocation(ctx context.Context, id int32) (sql.Result, e
 	return q.db.ExecContext(ctx, deleteAllocation, id)
 }
 
+const deleteService = `-- name: DeleteService :execresult
+DELETE FROM service where id = $1
+`
+
+func (q *Queries) DeleteService(ctx context.Context, id int32) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteService, id)
+}
+
 const getCurrentService = `-- name: GetCurrentService :many
 SELECT id, name, date, created_at, updated_at, time, is_active FROM service WHERE is_active = TRUE
 `
@@ -319,6 +327,25 @@ SELECT id, name, date, created_at, updated_at, time, is_active FROM service WHER
 
 func (q *Queries) GetService(ctx context.Context, id int32) (Service, error) {
 	row := q.db.QueryRowContext(ctx, getService, id)
+	var i Service
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Date,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Time,
+		&i.IsActive,
+	)
+	return i, err
+}
+
+const getServiceWithName = `-- name: GetServiceWithName :one
+SELECT id, name, date, created_at, updated_at, time, is_active FROM service WHERE name LIKE '%' || $1 || '%'
+`
+
+func (q *Queries) GetServiceWithName(ctx context.Context, dollar_1 sql.NullString) (Service, error) {
+	row := q.db.QueryRowContext(ctx, getServiceWithName, dollar_1)
 	var i Service
 	err := row.Scan(
 		&i.ID,

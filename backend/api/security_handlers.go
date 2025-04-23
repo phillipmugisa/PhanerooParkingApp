@@ -287,6 +287,12 @@ func (a *AppServer) CreateServicerHandler(ctx context.Context, w http.ResponseWr
 		return NewApiError("Unable to get time zone", http.StatusBadRequest)
 	}
 
+	// should not create service with the same name
+	_, fetch_err := a.db.GetServiceWithName(ctx, sql.NullString{String: serviceData.Name, Valid: true})
+	if fetch_err == nil {
+		return NewApiError("Service with this name already exists", http.StatusBadRequest)
+	}
+
 	_, write_err := a.db.CreateService(ctx, database.CreateServiceParams{
 		Name:      serviceData.Name,
 		Date:      serviceData.Date,
@@ -313,7 +319,7 @@ func (a *AppServer) CreateServicerHandler(ctx context.Context, w http.ResponseWr
 			// create on new service
 			_, write_err := a.db.CreateParkingSession(ctx, database.CreateParkingSessionParams{
 				StationID: parking.ID,
-				ServiceID: int32(results[1].ID),
+				ServiceID: int32(results[0].ID),
 				CreatedAt: time.Now().In(location),
 				UpdatedAt: time.Now().In(location),
 			})
@@ -328,7 +334,7 @@ func (a *AppServer) CreateServicerHandler(ctx context.Context, w http.ResponseWr
 						_, write_err := a.db.CreateAllocation(ctx, database.CreateAllocationParams{
 							TeamMemberID: int32(allocation.Teammemberid),
 							ParkingID:    int32(parking.ID),
-							ServiceID:    int32(results[1].ID),
+							ServiceID:    int32(results[0].ID),
 							CreatedAt:    time.Now().In(location),
 							UpdatedAt:    time.Now().In(location),
 						})
@@ -356,6 +362,20 @@ func (a *AppServer) GetServicerHandler(ctx context.Context, w http.ResponseWrite
 	}
 
 	return RespondWithJSON(w, http.StatusOK, service)
+}
+
+func (a *AppServer) DeleteServiceHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {
+	serviceId, e := strconv.Atoi(chi.URLParam(r, "id"))
+	if e != nil {
+		return NewApiError("Invalid data provided", http.StatusBadRequest)
+	}
+
+	_, err := a.db.DeleteService(ctx, int32(serviceId))
+	if err != nil {
+		return NewApiError("Unable to delete serv", http.StatusBadRequest)
+	}
+
+	return RespondWithJSON(w, http.StatusOK, struct{}{})
 }
 
 func (a *AppServer) UpdateServiceHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) *ApiError {

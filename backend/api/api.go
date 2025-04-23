@@ -68,6 +68,7 @@ func (a *AppServer) registerRoutes(r *chi.Mux) {
 	r.Post("/services/register", a.AuthedHandler(a.CreateServicerHandler))
 	r.Get("/services/details/{id}", a.AuthedHandler(a.GetServicerHandler))
 	r.Patch("/services/{id}/update", a.AuthedHandler(a.UpdateServiceHandler))
+	r.Patch("/services/{id}/delete", a.AuthedHandler(a.DeleteServiceHandler))
 	r.Get("/service/{id}/vehicles", a.AuthedHandler(a.GetServiceVehicleHandler))
 	r.Get("/service/{id}/parkingstations", a.AuthedHandler(a.GetServiceParkingStationsHandler))
 
