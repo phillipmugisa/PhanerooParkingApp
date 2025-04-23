@@ -14,7 +14,8 @@ import (
 const checkoutVehicle = `-- name: CheckoutVehicle :exec
 UPDATE vehicle 
 SET check_out_time = $2, 
-    is_checked_out = $3
+    is_checked_out = $3,
+    checked_out_by = $4
 WHERE id = $1
 `
 
@@ -22,10 +23,16 @@ type CheckoutVehicleParams struct {
 	ID           int32
 	CheckOutTime sql.NullTime
 	IsCheckedOut sql.NullBool
+	CheckedOutBy int32
 }
 
 func (q *Queries) CheckoutVehicle(ctx context.Context, arg CheckoutVehicleParams) error {
-	_, err := q.db.ExecContext(ctx, checkoutVehicle, arg.ID, arg.CheckOutTime, arg.IsCheckedOut)
+	_, err := q.db.ExecContext(ctx, checkoutVehicle,
+		arg.ID,
+		arg.CheckOutTime,
+		arg.IsCheckedOut,
+		arg.CheckedOutBy,
+	)
 	return err
 }
 
@@ -56,8 +63,8 @@ func (q *Queries) CreateDriver(ctx context.Context, arg CreateDriverParams) (int
 }
 
 const createVehicle = `-- name: CreateVehicle :execresult
-INSERT INTO vehicle(driver_id, license_number, card_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, created_at, updated_at)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+INSERT INTO vehicle(driver_id, license_number, card_number, model, security_notes, parking_id, service_id, checked_in_by, is_checked_out, check_in_time, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 `
 
 type CreateVehicleParams struct {
@@ -68,6 +75,7 @@ type CreateVehicleParams struct {
 	SecurityNotes sql.NullString
 	ParkingID     int32
 	ServiceID     int32
+	CheckedInBy   int32
 	IsCheckedOut  sql.NullBool
 	CheckInTime   sql.NullTime
 	CreatedAt     time.Time
@@ -83,6 +91,7 @@ func (q *Queries) CreateVehicle(ctx context.Context, arg CreateVehicleParams) (s
 		arg.SecurityNotes,
 		arg.ParkingID,
 		arg.ServiceID,
+		arg.CheckedInBy,
 		arg.IsCheckedOut,
 		arg.CheckInTime,
 		arg.CreatedAt,
@@ -421,31 +430,57 @@ func (q *Queries) GetVehiclesByParking(ctx context.Context, parkingID int32) ([]
 }
 
 const getVehiclesByService = `-- name: GetVehiclesByService :many
-SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, checked_in_by, checked_out_by, driver.id, fullname, phone_number, email, driver.created_at, driver.updated_at FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.service_id = $1
+SELECT vehicle.id, driver_id, license_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, check_out_time, vehicle.created_at, vehicle.updated_at, card_number, checked_in_by, checked_out_by, driver.id, driver.fullname, driver.phone_number, driver.email, driver.created_at, driver.updated_at, team_member.id, team_member.fullname, team_member.codename, team_member.phone_number, team_member.email, team_member.is_team_leader, team_member.is_admin, team_member.department_id, team_member.created_at, team_member.updated_at, team_member.password, team_member.id, team_member.fullname, team_member.codename, team_member.phone_number, team_member.email, team_member.is_team_leader, team_member.is_admin, team_member.department_id, team_member.created_at, team_member.updated_at, team_member.password FROM vehicle 
+JOIN driver ON vehicle.driver_id = driver.id 
+JOIN team_member ON team_member.id = vehicle.checked_in_by 
+JOIN team_member ON team_member.id = vehicle.checked_out_by 
+WHERE vehicle.service_id = $1
 `
 
 type GetVehiclesByServiceRow struct {
-	ID            int32
-	DriverID      int32
-	LicenseNumber string
-	Model         sql.NullString
-	SecurityNotes sql.NullString
-	ParkingID     int32
-	ServiceID     int32
-	IsCheckedOut  sql.NullBool
-	CheckInTime   sql.NullTime
-	CheckOutTime  sql.NullTime
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	CardNumber    sql.NullString
-	CheckedInBy   int32
-	CheckedOutBy  int32
-	ID_2          int32
-	Fullname      string
-	PhoneNumber   string
-	Email         sql.NullString
-	CreatedAt_2   time.Time
-	UpdatedAt_2   time.Time
+	ID             int32
+	DriverID       int32
+	LicenseNumber  string
+	Model          sql.NullString
+	SecurityNotes  sql.NullString
+	ParkingID      int32
+	ServiceID      int32
+	IsCheckedOut   sql.NullBool
+	CheckInTime    sql.NullTime
+	CheckOutTime   sql.NullTime
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	CardNumber     sql.NullString
+	CheckedInBy    int32
+	CheckedOutBy   int32
+	ID_2           int32
+	Fullname       string
+	PhoneNumber    string
+	Email          sql.NullString
+	CreatedAt_2    time.Time
+	UpdatedAt_2    time.Time
+	ID_3           int32
+	Fullname_2     string
+	Codename       string
+	PhoneNumber_2  string
+	Email_2        sql.NullString
+	IsTeamLeader   sql.NullBool
+	IsAdmin        sql.NullBool
+	DepartmentID   int32
+	CreatedAt_3    time.Time
+	UpdatedAt_3    time.Time
+	Password       sql.NullString
+	ID_4           int32
+	Fullname_3     string
+	Codename_2     string
+	PhoneNumber_3  string
+	Email_3        sql.NullString
+	IsTeamLeader_2 sql.NullBool
+	IsAdmin_2      sql.NullBool
+	DepartmentID_2 int32
+	CreatedAt_4    time.Time
+	UpdatedAt_4    time.Time
+	Password_2     sql.NullString
 }
 
 func (q *Queries) GetVehiclesByService(ctx context.Context, serviceID int32) ([]GetVehiclesByServiceRow, error) {
@@ -479,6 +514,28 @@ func (q *Queries) GetVehiclesByService(ctx context.Context, serviceID int32) ([]
 			&i.Email,
 			&i.CreatedAt_2,
 			&i.UpdatedAt_2,
+			&i.ID_3,
+			&i.Fullname_2,
+			&i.Codename,
+			&i.PhoneNumber_2,
+			&i.Email_2,
+			&i.IsTeamLeader,
+			&i.IsAdmin,
+			&i.DepartmentID,
+			&i.CreatedAt_3,
+			&i.UpdatedAt_3,
+			&i.Password,
+			&i.ID_4,
+			&i.Fullname_3,
+			&i.Codename_2,
+			&i.PhoneNumber_3,
+			&i.Email_3,
+			&i.IsTeamLeader_2,
+			&i.IsAdmin_2,
+			&i.DepartmentID_2,
+			&i.CreatedAt_4,
+			&i.UpdatedAt_4,
+			&i.Password_2,
 		); err != nil {
 			return nil, err
 		}

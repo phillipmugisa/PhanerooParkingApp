@@ -84,6 +84,7 @@ type VehicleData struct {
 	SecurityNote string    `json:"securityNote"`
 	ServiceId    int       `json:"serviceId"`
 	ParkingId    int       `json:"parkingId"`
+	CheckedInBy  int       `json:"checkedinby"`
 }
 
 // Implement custom UnmarshalJSON method for time.Time

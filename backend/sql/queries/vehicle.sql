@@ -21,8 +21,8 @@ SET fullname = $2, phone_number = $3,
 WHERE id = $1;
 
 -- name: CreateVehicle :execresult
-INSERT INTO vehicle(driver_id, license_number, card_number, model, security_notes, parking_id, service_id, is_checked_out, check_in_time, created_at, updated_at)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
+INSERT INTO vehicle(driver_id, license_number, card_number, model, security_notes, parking_id, service_id, checked_in_by, is_checked_out, check_in_time, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
 
 -- name: DeleteVehicleById :exec
 DELETE FROM vehicle WHERE id = $1;
@@ -34,7 +34,11 @@ SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id ORDER BY vehi
 SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.id = $1;
 
 -- name: GetVehiclesByService :many
-SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.service_id = $1;
+SELECT * FROM vehicle 
+JOIN driver ON vehicle.driver_id = driver.id 
+JOIN team_member ON team_member.id = vehicle.checked_in_by 
+JOIN team_member ON team_member.id = vehicle.checked_out_by 
+WHERE vehicle.service_id = $1;
 
 -- name: GetVehiclesByParking :many
 SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.parking_id = $1;
@@ -61,7 +65,8 @@ SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicl
 -- name: CheckoutVehicle :exec
 UPDATE vehicle 
 SET check_out_time = $2, 
-    is_checked_out = $3
+    is_checked_out = $3,
+    checked_out_by = $4
 WHERE id = $1;
 
 -- name: GetVehiclesByLicense :many

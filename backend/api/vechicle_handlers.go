@@ -182,6 +182,7 @@ func (a *AppServer) RegisterVehicleHandler(ctx context.Context, w http.ResponseW
 		IsCheckedOut:  sql.NullBool{Bool: false, Valid: true},
 		SecurityNotes: sql.NullString{String: vehicleData.SecurityNote, Valid: true},
 		CheckInTime:   sql.NullTime{Time: time.Now().In(location), Valid: true},
+		CheckedInBy:   int32(vehicleData.CheckedInBy),
 		CreatedAt:     time.Now().In(location),
 		UpdatedAt:     time.Now().In(location),
 	})
@@ -196,6 +197,17 @@ func (a *AppServer) CheckoutVehiclesHandler(ctx context.Context, w http.Response
 	vehicle_id, e := strconv.Atoi(chi.URLParam(r, "id"))
 	if e != nil {
 		return NewApiError("Invalid data provided", http.StatusBadRequest)
+	}
+
+	// Get checkoutby from query param
+	checkoutByStr := r.URL.Query().Get("checkoutby")
+	if checkoutByStr == "" {
+		return NewApiError("Missing 'checkoutby' parameter", http.StatusBadRequest)
+	}
+
+	checkoutBy, err := strconv.Atoi(checkoutByStr)
+	if err != nil {
+		return NewApiError("Invalid 'checkoutby' parameter", http.StatusBadRequest)
 	}
 
 	// get vehicle driver data
@@ -214,6 +226,7 @@ func (a *AppServer) CheckoutVehiclesHandler(ctx context.Context, w http.Response
 		ID:           vehicle.ID,
 		CheckOutTime: sql.NullTime{Time: time.Now().In(location), Valid: true},
 		IsCheckedOut: sql.NullBool{Bool: true, Valid: true},
+		CheckedOutBy: int32(checkoutBy),
 	})
 	if update_err != nil {
 		return NewApiError("Unable to update record", http.StatusBadRequest)
