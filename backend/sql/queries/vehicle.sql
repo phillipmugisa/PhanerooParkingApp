@@ -34,11 +34,17 @@ SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id ORDER BY vehi
 SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.id = $1;
 
 -- name: GetVehiclesByService :many
-SELECT * FROM vehicle 
+SELECT 
+  vehicle.*, 
+  driver.*, 
+  checkin_member.codename AS checked_in_by_codename, 
+  checkout_member.codename AS checked_out_by_codename
+FROM vehicle 
 JOIN driver ON vehicle.driver_id = driver.id 
-JOIN team_member ON team_member.id = vehicle.checked_in_by 
-JOIN team_member ON team_member.id = vehicle.checked_out_by 
+JOIN team_member AS checkin_member ON checkin_member.id = vehicle.checked_in_by 
+JOIN team_member AS checkout_member ON checkout_member.id = vehicle.checked_out_by 
 WHERE vehicle.service_id = $1;
+
 
 -- name: GetVehiclesByParking :many
 SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicle.parking_id = $1;
