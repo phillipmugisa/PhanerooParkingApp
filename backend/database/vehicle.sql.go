@@ -431,14 +431,16 @@ func (q *Queries) GetVehiclesByParking(ctx context.Context, parkingID int32) ([]
 
 const getVehiclesByService = `-- name: GetVehiclesByService :many
 SELECT 
-  vehicle.id, vehicle.driver_id, vehicle.license_number, vehicle.model, vehicle.security_notes, vehicle.parking_id, vehicle.service_id, vehicle.is_checked_out, vehicle.check_in_time, vehicle.check_out_time, vehicle.created_at, vehicle.updated_at, vehicle.card_number, vehicle.checked_in_by, vehicle.checked_out_by, 
-  driver.id, driver.fullname, driver.phone_number, driver.email, driver.created_at, driver.updated_at, 
-  checkin_member.codename AS checked_in_by_codename, 
-  checkout_member.codename AS checked_out_by_codename
+  vehicle.id, vehicle.driver_id, vehicle.license_number, vehicle.model, vehicle.security_notes, vehicle.parking_id, vehicle.service_id, vehicle.is_checked_out, vehicle.check_in_time, vehicle.check_out_time, vehicle.created_at, vehicle.updated_at, vehicle.card_number, vehicle.checked_in_by, vehicle.checked_out_by,                                -- All vehicle fields
+  driver.id, driver.fullname, driver.phone_number, driver.email, driver.created_at, driver.updated_at,                                 -- All driver fields
+  checkin_member.codename AS checked_in_by_codename,     -- Codename of check-in team member
+  checkout_member.codename AS checked_out_by_codename,   -- Codename of check-out team member
+  parkingstation.codename AS parked_at     -- Codename of the parking station
 FROM vehicle 
 JOIN driver ON vehicle.driver_id = driver.id 
 JOIN team_member AS checkin_member ON checkin_member.id = vehicle.checked_in_by 
 JOIN team_member AS checkout_member ON checkout_member.id = vehicle.checked_out_by 
+JOIN parkingstation ON parkingstation.id = vehicle.parking_id 
 WHERE vehicle.service_id = $1
 `
 
@@ -466,6 +468,7 @@ type GetVehiclesByServiceRow struct {
 	UpdatedAt_2          time.Time
 	CheckedInByCodename  string
 	CheckedOutByCodename string
+	ParkedAt             string
 }
 
 func (q *Queries) GetVehiclesByService(ctx context.Context, serviceID int32) ([]GetVehiclesByServiceRow, error) {
@@ -501,6 +504,7 @@ func (q *Queries) GetVehiclesByService(ctx context.Context, serviceID int32) ([]
 			&i.UpdatedAt_2,
 			&i.CheckedInByCodename,
 			&i.CheckedOutByCodename,
+			&i.ParkedAt,
 		); err != nil {
 			return nil, err
 		}
