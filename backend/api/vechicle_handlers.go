@@ -139,16 +139,12 @@ func (a *AppServer) RegisterVehicleHandler(ctx context.Context, w http.ResponseW
 	}
 
 	// check if this vehicle has has already been registered in this service
-	vehicles, f_err := a.db.GetVehiclesExisting(ctx, database.GetVehiclesExistingParams{
+	vehicles, _ := a.db.GetVehiclesExisting(ctx, database.GetVehiclesExistingParams{
 		LicenseNumber: vehicleData.LicenseNo,
 		ServiceID:     service.ID,
 	})
-	if f_err == nil {
-		fmt.Printf("\n\n\n%v, err: f_err: %v", vehicles, f_err)
-		if len(vehicles) > 0 {
-			return NewApiError("Vehicle Already Registered for this service", http.StatusConflict)
-		}
-		return NewApiError("Unable to process data", http.StatusBadRequest)
+	if len(vehicles) > 0 {
+		return NewApiError("Vehicle Already Registered for this service", http.StatusConflict)
 	}
 
 	// create driver
