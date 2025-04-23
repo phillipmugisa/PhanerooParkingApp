@@ -645,9 +645,10 @@ func (q *Queries) ListService(ctx context.Context) ([]Service, error) {
 }
 
 const listServiceAllocation = `-- name: ListServiceAllocation :many
-SELECT allocation.id, team_member_id, parking_id, service_id, allocation.created_at, allocation.updated_at, parkingstation.id, parkingstation.name, codename, parkingstation.created_at, parkingstation.updated_at, service.id, service.name, date, service.created_at, service.updated_at, time, is_active FROM allocation 
+SELECT allocation.id, team_member_id, parking_id, service_id, allocation.created_at, allocation.updated_at, parkingstation.id, parkingstation.name, parkingstation.codename, parkingstation.created_at, parkingstation.updated_at, service.id, service.name, date, service.created_at, service.updated_at, time, is_active, team_member.id, fullname, team_member.codename, phone_number, email, is_team_leader, is_admin, department_id, team_member.created_at, team_member.updated_at, password FROM allocation 
 JOIN parkingstation ON parking_id = parkingstation.id 
 JOIN service ON allocation.service_id = service.id
+JOIN team_member ON team_member.id = allocation.team_member_id
 WHERE allocation.service_id = $1
 `
 
@@ -670,6 +671,17 @@ type ListServiceAllocationRow struct {
 	UpdatedAt_3  time.Time
 	Time         sql.NullTime
 	IsActive     sql.NullBool
+	ID_4         int32
+	Fullname     string
+	Codename_2   string
+	PhoneNumber  string
+	Email        sql.NullString
+	IsTeamLeader sql.NullBool
+	IsAdmin      sql.NullBool
+	DepartmentID int32
+	CreatedAt_4  time.Time
+	UpdatedAt_4  time.Time
+	Password     sql.NullString
 }
 
 func (q *Queries) ListServiceAllocation(ctx context.Context, serviceID int32) ([]ListServiceAllocationRow, error) {
@@ -700,6 +712,17 @@ func (q *Queries) ListServiceAllocation(ctx context.Context, serviceID int32) ([
 			&i.UpdatedAt_3,
 			&i.Time,
 			&i.IsActive,
+			&i.ID_4,
+			&i.Fullname,
+			&i.Codename_2,
+			&i.PhoneNumber,
+			&i.Email,
+			&i.IsTeamLeader,
+			&i.IsAdmin,
+			&i.DepartmentID,
+			&i.CreatedAt_4,
+			&i.UpdatedAt_4,
+			&i.Password,
 		); err != nil {
 			return nil, err
 		}
