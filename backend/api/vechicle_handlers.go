@@ -147,6 +147,8 @@ func (a *AppServer) RegisterVehicleHandler(ctx context.Context, w http.ResponseW
 		return NewApiError("Vehicle Already Registered for this service", http.StatusConflict)
 	}
 
+	fmt.Printf("\n\nvehicles: %v", vehicles)
+
 	// create driver
 	driver_id, err := a.db.CreateDriver(ctx, database.CreateDriverParams{
 		Fullname:    vehicleData.DriverName,
