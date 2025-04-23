@@ -144,6 +144,7 @@ func (a *AppServer) RegisterVehicleHandler(ctx context.Context, w http.ResponseW
 		ServiceID:     service.ID,
 	})
 	if f_err == nil {
+		fmt.Printf("\n\n\n%v, err: f_err: %v", vehicles, f_err)
 		if len(vehicles) > 0 {
 			return NewApiError("Vehicle Already Registered for this service", http.StatusConflict)
 		}
