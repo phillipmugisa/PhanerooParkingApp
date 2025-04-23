@@ -647,8 +647,8 @@ func (q *Queries) ListService(ctx context.Context) ([]Service, error) {
 const listServiceAllocation = `-- name: ListServiceAllocation :many
 SELECT allocation.id, team_member_id, parking_id, service_id, allocation.created_at, allocation.updated_at, parkingstation.id, parkingstation.name, codename, parkingstation.created_at, parkingstation.updated_at, service.id, service.name, date, service.created_at, service.updated_at, time, is_active FROM allocation 
 JOIN parkingstation ON parking_id = parkingstation.id 
-JOIN service ON service_id = service_id.id 
-WHERE service_id = $1
+JOIN service ON allocation.service_id = service.id
+WHERE allocation.service_id = $1
 `
 
 type ListServiceAllocationRow struct {

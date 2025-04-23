@@ -103,7 +103,7 @@ JOIN service ON service_id = service_id.id;
 SELECT * FROM allocation 
 JOIN parkingstation ON parking_id = parkingstation.id 
 JOIN service ON allocation.service_id = service.id
-WHERE service_id = $1;
+WHERE allocation.service_id = $1;
 
 
 -- name: ListServiceParkingAllocation :many
