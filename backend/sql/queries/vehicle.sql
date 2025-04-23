@@ -35,15 +35,18 @@ SELECT * FROM vehicle JOIN driver ON vehicle.driver_id = driver.id  WHERE vehicl
 
 -- name: GetVehiclesByService :many
 SELECT 
-  vehicle.*, 
-  driver.*, 
-  checkin_member.codename AS checked_in_by_codename, 
-  checkout_member.codename AS checked_out_by_codename
+  vehicle.*,                                -- All vehicle fields
+  driver.*,                                 -- All driver fields
+  checkin_member.codename AS checked_in_by_codename,     -- Codename of check-in team member
+  checkout_member.codename AS checked_out_by_codename,   -- Codename of check-out team member
+  parkingstation.codename AS parked_at     -- Codename of the parking station
 FROM vehicle 
 JOIN driver ON vehicle.driver_id = driver.id 
 JOIN team_member AS checkin_member ON checkin_member.id = vehicle.checked_in_by 
 JOIN team_member AS checkout_member ON checkout_member.id = vehicle.checked_out_by 
+JOIN parkingstation ON parkingstation.id = vehicle.parking_id 
 WHERE vehicle.service_id = $1;
+
 
 
 -- name: GetVehiclesByParking :many
