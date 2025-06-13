@@ -104,4 +104,5 @@ type Vehicle struct {
 	CheckedInBy   int32
 	CheckedOutBy  int32
 	Occupants     sql.NullString
+	VehicleType   sql.NullString
 }

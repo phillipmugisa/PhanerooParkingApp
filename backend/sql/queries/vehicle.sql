@@ -21,8 +21,8 @@ SET fullname = $2, phone_number = $3,
 WHERE id = $1;
 
 -- name: CreateVehicle :execresult
-INSERT INTO vehicle(driver_id, license_number, card_number, occupants, model, security_notes, parking_id, service_id, checked_in_by, is_checked_out, check_in_time, created_at, updated_at)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
+INSERT INTO vehicle(driver_id, license_number, card_number, vehicle_type, occupants, model, security_notes, parking_id, service_id, checked_in_by, is_checked_out, check_in_time, created_at, updated_at)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
 
 -- name: DeleteVehicleById :exec
 DELETE FROM vehicle WHERE id = $1;

@@ -173,6 +173,7 @@ func (a *AppServer) RegisterVehicleHandler(ctx context.Context, w http.ResponseW
 		LicenseNumber: vehicleData.LicenseNo,
 		CardNumber:    sql.NullString{String: vehicleData.CardNumber, Valid: true},
 		Occupants:     sql.NullString{String: vehicleData.Occupants, Valid: true},
+		VehicleType:   sql.NullString{String: vehicleData.VehicleType, Valid: true},
 		Model:         sql.NullString{String: vehicleData.CarModel, Valid: true},
 		ServiceID:     int32(service.ID),
 		ParkingID:     int32(parking.ID),

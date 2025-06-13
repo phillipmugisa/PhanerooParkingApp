@@ -76,6 +76,7 @@ type VehicleData struct {
 	LicenseNo    string    `json:"licenseNo"`
 	CardNumber   string    `json:"cardNumber"`
 	Occupants    string    `json:"occupants"`
+	VehicleType  string    `json:"vehicleType"`
 	CarModel     string    `json:"carModel"`
 	CheckInTime  time.Time `json:"checkInTime"`
 	CheckOutTime time.Time `json:"checkOutTime"`
