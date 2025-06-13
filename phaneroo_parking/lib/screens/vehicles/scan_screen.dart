@@ -38,8 +38,9 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
   final TextEditingController driverNameController = TextEditingController();
   final TextEditingController telNumberController = TextEditingController();
   final TextEditingController cardNumberController = TextEditingController();
+  final TextEditingController carOccupantsController = TextEditingController();
 
-  String _selectedVehicle = "car";
+  String _selectedVehicleType = "CAR";
 
   void populateFields(String value) {
     final Future response = searchVehicles(value);
@@ -140,6 +141,8 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
           'driverName': driverNameController.text,
           'driverTelNo': telNumberController.text,
           "cardNumber": cardNumberController.text.toString(),
+          "occupants": carOccupantsController.text.toString(),
+          "vehicleType": _selectedVehicleType,
           'ServiceId': currentServiceId,
           'ParkingId': parkingId
         };
@@ -240,14 +243,14 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                     child: GestureDetector(
                       onTap: () {
                         setState(() {
-                          _selectedVehicle = "car";
+                          _selectedVehicleType = "CAR";
                         });
                       },
                       child: Card(
-                        color: _selectedVehicle == "car"
+                        color: _selectedVehicleType == "CAR"
                             ? Colors.blue.shade100
                             : Colors.white,
-                        elevation: _selectedVehicle == "car" ? 5 : 2,
+                        elevation: _selectedVehicleType == "CAR" ? 5 : 2,
                         child: const Padding(
                           padding: EdgeInsets.symmetric(vertical: 20),
                           child: Column(
@@ -256,7 +259,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                               Icon(Icons.directions_car,
                                   size: 50, color: Colors.blue),
                               SizedBox(height: 8),
-                              Text("Car"),
+                              Text("CAR"),
                             ],
                           ),
                         ),
@@ -269,14 +272,14 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                     child: GestureDetector(
                       onTap: () {
                         setState(() {
-                          _selectedVehicle = "bike";
+                          _selectedVehicleType = "BIKE";
                         });
                       },
                       child: Card(
-                        color: _selectedVehicle == "bike"
+                        color: _selectedVehicleType == "BIKE"
                             ? Colors.green.shade100
                             : Colors.white,
-                        elevation: _selectedVehicle == "bike" ? 5 : 2,
+                        elevation: _selectedVehicleType == "BIKE" ? 5 : 2,
                         child: const Padding(
                           padding: EdgeInsets.symmetric(vertical: 20),
                           child: Column(
@@ -285,7 +288,7 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                               Icon(Icons.pedal_bike,
                                   size: 50, color: Colors.green),
                               SizedBox(height: 8),
-                              Text("Bike"),
+                              Text("BIKE"),
                             ],
                           ),
                         ),
@@ -413,6 +416,23 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                           onChanged: (value) {
                             populateFields(value);
                           },
+                        ),
+                        const SizedBox(height: 20.0),
+                        TextFormField(
+                          controller: carOccupantsController,
+                          maxLines: 1,
+                          decoration: InputDecoration(
+                            border: const OutlineInputBorder(),
+                            label: Text(
+                              "Occupants",
+                              style: GoogleFonts.lato(
+                                textStyle: const TextStyle(
+                                  fontSize: 14.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                          validator: (value) {},
                         ),
                       ],
                     ),
