@@ -276,12 +276,21 @@ class _RecordsScreenState extends State<RecordsScreen> {
             currentScreenIndex = index;
             switch (index) {
               case 0:
+                if (index == 0) {
+                  return;
+                }
                 Navigator.pushNamed(context, "/");
                 return;
               case 1:
+                if (index == 1) {
+                  return;
+                }
                 Navigator.pushNamed(context, "/records");
                 return;
               case 2:
+                if (index == 2) {
+                  return;
+                }
                 Navigator.pushNamed(context, "/scan");
                 return;
             }

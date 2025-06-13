@@ -414,7 +414,9 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
                           ),
                           validator: (value) {},
                           onChanged: (value) {
-                            populateFields(value);
+                            if (licenseNoController.text.length < 0) {
+                              populateFields(value);
+                            }
                           },
                         ),
                         const SizedBox(height: 20.0),
@@ -562,12 +564,21 @@ class _ScanCarScreenState extends State<ScanCarScreen> {
             currentScreenIndex = index;
             switch (index) {
               case 0:
+                if (index == 0) {
+                  return;
+                }
                 Navigator.pushNamed(context, "/");
                 return;
               case 1:
+                if (index == 1) {
+                  return;
+                }
                 Navigator.pushNamed(context, "/records");
                 return;
               case 2:
+                if (index == 2) {
+                  return;
+                }
                 Navigator.pushNamed(context, "/scan");
                 return;
             }
