@@ -75,6 +75,7 @@ type HandlerResponse struct {
 type VehicleData struct {
 	LicenseNo    string    `json:"licenseNo"`
 	CardNumber   string    `json:"cardNumber"`
+	Occupants    string    `json:"occupants"`
 	CarModel     string    `json:"carModel"`
 	CheckInTime  time.Time `json:"checkInTime"`
 	CheckOutTime time.Time `json:"checkOutTime"`
