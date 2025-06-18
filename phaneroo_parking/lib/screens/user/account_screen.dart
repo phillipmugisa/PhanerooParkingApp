@@ -25,7 +25,7 @@ class _AccountScreenState extends State<AccountScreen> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.black,
+          backgroundColor: Color.fromRGBO(42, 10, 74, 1),
           elevation: 1,
           title: const Row(
             children: [

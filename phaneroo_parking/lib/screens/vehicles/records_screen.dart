@@ -47,7 +47,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.black,
+          backgroundColor: Color.fromRGBO(42, 10, 74, 1),
           elevation: 1,
           title: const Row(
             children: [
@@ -134,21 +134,12 @@ class _RecordsScreenState extends State<RecordsScreen> {
             currentScreenIndex = index;
             switch (index) {
               case 0:
-                if (index == 0) {
-                  return;
-                }
                 Navigator.pushNamed(context, "/");
                 return;
               case 1:
-                if (index == 1) {
-                  return;
-                }
                 Navigator.pushNamed(context, "/records");
                 return;
               case 2:
-                if (index == 2) {
-                  return;
-                }
                 Navigator.pushNamed(context, "/scan");
                 return;
             }

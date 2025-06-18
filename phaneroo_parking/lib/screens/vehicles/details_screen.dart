@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phaneroo_parking/requests.dart';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DetailsScreen extends StatefulWidget {
   const DetailsScreen({super.key});
@@ -15,6 +16,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
   int? currentServiceId;
   int? parkingId; // this is based on the allocation
   int? vehicleId;
+  int? userID;
   bool? isCheckedOut = false;
 
   // text fields
@@ -124,7 +126,12 @@ class _DetailsScreenState extends State<DetailsScreen> {
   }
 
   void checkoutVehicle(int id) {
-    checkoutVehicleRequest(id).then((response) {
+    SharedPreferences.getInstance().then((prefs) {
+      setState(() {
+        userID = prefs.getInt("userID");
+      });
+    });
+    checkoutVehicleRequest(id, userID!).then((response) {
       if (response.statusCode > 399) {
         showDialog<String>(
           context: context,
@@ -500,21 +507,12 @@ class _DetailsScreenState extends State<DetailsScreen> {
             currentScreenIndex = index;
             switch (index) {
               case 0:
-                if (index == 0) {
-                  return;
-                }
                 Navigator.pushNamed(context, "/");
                 return;
               case 1:
-                if (index == 1) {
-                  return;
-                }
                 Navigator.pushNamed(context, "/records");
                 return;
               case 2:
-                if (index == 2) {
-                  return;
-                }
                 Navigator.pushNamed(context, "/scan");
                 return;
             }

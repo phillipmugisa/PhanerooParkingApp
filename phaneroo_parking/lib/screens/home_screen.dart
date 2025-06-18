@@ -42,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         appBar: AppBar(
           // Changed AppBar colors to green theme
-          backgroundColor: Colors.black,
+          backgroundColor: Color.fromRGBO(42, 10, 74, 1),
           elevation: 1,
           title: const Row(
             children: [
@@ -166,21 +166,12 @@ class _HomeScreenState extends State<HomeScreen> {
             currentScreenIndex = index;
             switch (index) {
               case 0:
-                if (index == 0) {
-                  return;
-                }
                 Navigator.pushNamed(context, "/");
                 return;
               case 1:
-                if (index == 1) {
-                  return;
-                }
                 Navigator.pushNamed(context, "/records");
                 return;
               case 2:
-                if (index == 2) {
-                  return;
-                }
                 Navigator.pushNamed(context, "/scan");
                 return;
             }
@@ -794,6 +785,12 @@ class _PersonnalDetailsState extends State<PersonnalDetails> {
                                 return Container();
                               } else if (snapshot.hasData) {
                                 var jsonData = json.decode(snapshot.data!.body);
+
+                                print(jsonData);
+                                SharedPreferences.getInstance().then((prefs) {
+                                  prefs.setInt(
+                                      "parkingId", jsonData["ParkingID"]);
+                                });
                                 return Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8.0,

@@ -102,12 +102,12 @@ Future<http.Response> updateVehicle(int id, Map<String, dynamic> data) async {
   );
 }
 
-Future<http.Response> checkoutVehicleRequest(int id) async {
+Future<http.Response> checkoutVehicleRequest(int id, int userID) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   String? accessToken = prefs.get("access_token").toString();
 
   return await http.patch(
-    Uri.parse("$backendUrl/vehicles/$id/checkout"),
+    Uri.parse("$backendUrl/vehicles/$id/checkout?checkoutby=$userID"),
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
       'Authorization': 'JWT $accessToken',
